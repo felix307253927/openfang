@@ -1,10 +1,16 @@
 {
-  "name": "@openfang/sdk",
-  "version": "0.1.0",
+  "name": "openfang-sdk",
+  "version": "0.3.8",
   "description": "Official JavaScript/TypeScript client for the OpenFang Agent OS REST API",
   "main": "index.js",
   "types": "index.d.ts",
-  "keywords": ["openfang", "agent", "ai", "llm", "sdk"],
+  "keywords": [
+    "openfang",
+    "agent",
+    "ai",
+    "llm",
+    "sdk"
+  ],
   "license": "MIT",
   "repository": {
     "type": "git",
@@ -13,5 +19,8 @@
   "engines": {
     "node": ">=18.0.0"
   },
-  "files": ["index.js", "index.d.ts"]
+  "files": [
+    "index.js",
+    "index.d.ts"
+  ]
 }
