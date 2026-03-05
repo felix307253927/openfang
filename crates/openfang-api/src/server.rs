@@ -1,5 +1,6 @@
 //! OpenFang daemon server — boots the kernel and serves the HTTP API.
 
+use crate::agent;
 use crate::channel_bridge;
 use crate::middleware;
 use crate::rate_limiter;
@@ -150,12 +151,24 @@ pub async fn build_router(
             axum::routing::get(routes::get_agent_tools).put(routes::set_agent_tools),
         )
         .route(
+            "/api/agents/{id}/builtin_tools",
+            axum::routing::get(agent::get_agent_builtin_tools_config),
+        )
+        .route(
             "/api/agents/{id}/skills",
             axum::routing::get(routes::get_agent_skills).put(routes::set_agent_skills),
         )
         .route(
+            "/api/agents/{id}/skills_config",
+            axum::routing::get(agent::get_agent_skills).put(agent::set_agent_skills),
+        )
+        .route(
             "/api/agents/{id}/mcp_servers",
             axum::routing::get(routes::get_agent_mcp_servers).put(routes::set_agent_mcp_servers),
+        )
+        .route(
+            "/api/agents/{id}/mcp_config",
+            axum::routing::get(agent::get_agent_mcp_servers).put(agent::set_agent_mcp_servers),
         )
         .route(
             "/api/agents/{id}/identity",

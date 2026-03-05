@@ -192,8 +192,14 @@ pub fn create_embedding_driver(
         "together" => TOGETHER_BASE_URL.to_string(),
         "fireworks" => FIREWORKS_BASE_URL.to_string(),
         "mistral" => MISTRAL_BASE_URL.to_string(),
-        "ollama" => OLLAMA_BASE_URL.to_string(),
-        "vllm" => VLLM_BASE_URL.to_string(),
+        "ollama" => std::env::var("OLLAMA_BASE_URL")
+            .ok()
+            .filter(|s| !s.is_empty())
+            .unwrap_or_else(|| OLLAMA_BASE_URL.to_string()),
+        "vllm" => std::env::var("VLLM_BASE_URL")
+            .ok()
+            .filter(|s| !s.is_empty())
+            .unwrap_or_else(|| VLLM_BASE_URL.to_string()),
         "lmstudio" => LMSTUDIO_BASE_URL.to_string(),
         other => {
             warn!("Unknown embedding provider '{other}', using OpenAI-compatible format");
@@ -213,6 +219,9 @@ pub fn create_embedding_driver(
         );
     }
 
+    tracing::info!(
+        "Creating embedding driver:{provider}, model={model}, base_url={base_url}, api_key={api_key}",
+    );
     let config = EmbeddingConfig {
         provider: provider.to_string(),
         model: model.to_string(),
