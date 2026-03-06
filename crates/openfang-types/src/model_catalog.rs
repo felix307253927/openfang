@@ -43,6 +43,7 @@ pub const ZAI_CODING_BASE_URL: &str = "https://api.z.ai/api/coding/paas/v4";
 pub const MOONSHOT_BASE_URL: &str = "https://api.moonshot.cn/v1";
 pub const QIANFAN_BASE_URL: &str = "https://qianfan.baidubce.com/v2";
 pub const MODELSCOPE_BASE_URL: &str = "https://api-inference.modelscope.cn/v1";
+pub const SILICONFLOW_BASE_URL: &str = "https://api.siliconflow.cn/v1";
 pub const VOLCENGINE_BASE_URL: &str = "https://ark.cn-beijing.volces.com/api/v3";
 pub const VOLCENGINE_CODING_BASE_URL: &str = "https://ark.cn-beijing.volces.com/api/coding/v3";
 
