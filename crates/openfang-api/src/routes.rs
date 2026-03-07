@@ -1042,6 +1042,7 @@ pub async fn get_agent(
             "fallback_models": entry.manifest.fallback_models,
             "tool_allowlist": entry.manifest.tool_allowlist,
             "tool_blocklist": entry.manifest.tool_blocklist,
+            "workspace": entry.manifest.workspace,
         })),
     )
 }
