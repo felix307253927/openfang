@@ -4397,6 +4397,11 @@ impl OpenFangKernel {
             all_tools.retain(|t| !tool_blocklist.iter().any(|b| b == &t.name));
         }
 
+        // Filter web_search if globally disabled via config
+        if !self.config.web.enable {
+            all_tools.retain(|t| t.name != "web_search");
+        }
+
         // Remove shell_exec from tool list if exec_policy won't allow it,
         // so the LLM doesn't try to call a tool that will be blocked.
         let exec_blocks_shell = entry.as_ref().is_some_and(|e| {

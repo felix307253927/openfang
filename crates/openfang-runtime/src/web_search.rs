@@ -43,6 +43,10 @@ impl WebSearchEngine {
 
     /// Perform a web search using the configured provider (or auto-fallback).
     pub async fn search(&self, query: &str, max_results: usize) -> Result<String, String> {
+        // Check if web_search is globally enabled
+        if !self.config.enable {
+            return Err("web_search is globally disabled".to_string());
+        }
         // Check cache first
         let cache_key = format!("search:{}:{}", query, max_results);
         if let Some(cached) = self.cache.get(&cache_key) {

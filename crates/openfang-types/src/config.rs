@@ -163,6 +163,9 @@ pub enum SearchProvider {
 pub struct WebConfig {
     /// Which search provider to use.
     pub search_provider: SearchProvider,
+    /// Enable/disable web_search globally. Default: true.
+    #[serde(default)]
+    pub enable: bool,
     /// Cache TTL in minutes (0 = disabled).
     pub cache_ttl_minutes: u64,
     /// Brave Search configuration.
@@ -179,6 +182,7 @@ impl Default for WebConfig {
     fn default() -> Self {
         Self {
             search_provider: SearchProvider::default(),
+            enable: true,
             cache_ttl_minutes: 15,
             brave: BraveSearchConfig::default(),
             tavily: TavilySearchConfig::default(),
