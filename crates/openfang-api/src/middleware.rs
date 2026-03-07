@@ -9,7 +9,6 @@ use axum::body::Body;
 use axum::http::{Request, Response, StatusCode};
 use axum::middleware::Next;
 use std::time::Instant;
-use tracing::info;
 
 /// Request ID header name (standard).
 pub const REQUEST_ID_HEADER: &str = "x-request-id";
@@ -26,7 +25,7 @@ pub async fn request_logging(request: Request<Body>, next: Next) -> Response<Bod
     let elapsed = start.elapsed();
     let status = response.status().as_u16();
 
-    info!(
+    tracing::trace!(
         request_id = %request_id,
         method = %method,
         path = %uri,

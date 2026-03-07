@@ -8,7 +8,7 @@ use futures::StreamExt;
 use openfang_types::message::{ContentBlock, MessageContent, Role, StopReason, TokenUsage};
 use openfang_types::tool::ToolCall;
 use serde::{Deserialize, Serialize};
-use tracing::{debug, warn};
+use tracing::{debug, info, warn};
 use zeroize::Zeroizing;
 
 /// OpenAI-compatible API driver.
@@ -319,7 +319,8 @@ impl LlmDriver for OpenAIDriver {
         let max_retries = 3;
         for attempt in 0..=max_retries {
             let url = format!("{}/chat/completions", self.base_url);
-            debug!(url = %url, attempt, "Sending OpenAI API request");
+            info!(url = %url, attempt, "Sending OpenAI API request");
+            info!("Request: {:?}", oai_request);
 
             let mut req_builder = self
                 .client
@@ -389,9 +390,16 @@ impl LlmDriver for OpenAIDriver {
 
                 // Auto-cap max_tokens when model rejects our value (e.g. Groq Maverick limit 8192)
                 if status == 400 && body.contains("max_tokens") && attempt < max_retries {
-                    let current = oai_request.max_tokens.or(oai_request.max_completion_tokens).unwrap_or(4096);
+                    let current = oai_request
+                        .max_tokens
+                        .or(oai_request.max_completion_tokens)
+                        .unwrap_or(4096);
                     let cap = extract_max_tokens_limit(&body).unwrap_or(current / 2);
-                    warn!(old = current, new = cap, "Auto-capping max_tokens to model limit");
+                    warn!(
+                        old = current,
+                        new = cap,
+                        "Auto-capping max_tokens to model limit"
+                    );
                     if oai_request.max_completion_tokens.is_some() {
                         oai_request.max_completion_tokens = Some(cap);
                     } else {
@@ -645,7 +653,8 @@ impl LlmDriver for OpenAIDriver {
         let max_retries = 3;
         for attempt in 0..=max_retries {
             let url = format!("{}/chat/completions", self.base_url);
-            debug!(url = %url, attempt, "Sending OpenAI streaming request");
+            info!(url = %url, attempt, "Sending OpenAI streaming request");
+            info!("Request: {:?}", oai_request);
 
             let mut req_builder = self
                 .client
@@ -716,7 +725,10 @@ impl LlmDriver for OpenAIDriver {
 
                 // Auto-cap max_tokens when model rejects our value
                 if status == 400 && body.contains("max_tokens") && attempt < max_retries {
-                    let current = oai_request.max_tokens.or(oai_request.max_completion_tokens).unwrap_or(4096);
+                    let current = oai_request
+                        .max_tokens
+                        .or(oai_request.max_completion_tokens)
+                        .unwrap_or(4096);
                     let cap = extract_max_tokens_limit(&body).unwrap_or(current / 2);
                     warn!(old = current, new = cap, "Auto-capping max_tokens (stream)");
                     if oai_request.max_completion_tokens.is_some() {
@@ -798,6 +810,7 @@ impl LlmDriver for OpenAIDriver {
                         if let Some(ct) = u["completion_tokens"].as_u64() {
                             usage.output_tokens = ct;
                         }
+                        tracing::debug!("usage: {:?}", usage);
                     }
 
                     let choices = match json["choices"].as_array() {
@@ -864,6 +877,7 @@ impl LlmDriver for OpenAIDriver {
 
                         // Finish reason
                         if let Some(fr) = choice["finish_reason"].as_str() {
+                            tracing::info!("finish_reason: {:?}", fr);
                             finish_reason = Some(fr.to_string());
                         }
                     }
