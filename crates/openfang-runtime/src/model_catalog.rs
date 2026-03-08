@@ -8,7 +8,8 @@ use openfang_types::model_catalog::{
     BEDROCK_BASE_URL, CEREBRAS_BASE_URL, COHERE_BASE_URL, DEEPSEEK_BASE_URL, FIREWORKS_BASE_URL,
     GEMINI_BASE_URL, GITHUB_COPILOT_BASE_URL, GROQ_BASE_URL, HUGGINGFACE_BASE_URL,
     LMSTUDIO_BASE_URL, MINIMAX_BASE_URL, MISTRAL_BASE_URL, MODELSCOPE_BASE_URL, MOONSHOT_BASE_URL,
-    OLLAMA_BASE_URL, OPENAI_BASE_URL, OPENROUTER_BASE_URL, PERPLEXITY_BASE_URL, QIANFAN_BASE_URL,
+    OLLAMA_BASE_URL, LEMONADE_BASE_URL, OPENAI_BASE_URL, OPENROUTER_BASE_URL, PERPLEXITY_BASE_URL,
+    QIANFAN_BASE_URL,
     QWEN_BASE_URL, REPLICATE_BASE_URL, SAMBANOVA_BASE_URL, TOGETHER_BASE_URL, VENICE_BASE_URL,
     VLLM_BASE_URL, VOLCENGINE_BASE_URL, VOLCENGINE_CODING_BASE_URL, XAI_BASE_URL, ZAI_BASE_URL,
     ZAI_CODING_BASE_URL, ZHIPU_BASE_URL, ZHIPU_CODING_BASE_URL,
@@ -511,6 +512,25 @@ fn builtin_providers() -> Vec<ProviderInfo> {
             model_count: 0,
             is_local: true,
         },
+        ProviderInfo {
+            id: "lemonade".into(),
+            display_name: "Lemonade".into(),
+            api_key_env: "LEMONADE_API_KEY".into(),
+            base_url: LEMONADE_BASE_URL.into(),
+            key_required: false,
+            auth_status: AuthStatus::NotRequired,
+            model_count: 0,
+        },
+        ProviderInfo {
+            id: "lemonade".into(),
+            display_name: "Lemonade".into(),
+            api_key_env: "LEMONADE_API_KEY".into(),
+            base_url: LEMONADE_BASE_URL.into(),
+            key_required: false,
+            auth_status: AuthStatus::NotRequired,
+            model_count: 0,
+            is_local: false,
+        },
         // ── New providers (8) ──────────────────────────────────────
         ProviderInfo {
             id: "perplexity".into(),
@@ -854,7 +874,7 @@ fn builtin_aliases() -> HashMap<String, String> {
         ("qwen", "qwen-plus"),
         ("glm", "glm-5-20250605"),
         ("ernie", "ernie-4.5-8k"),
-        ("kimi", "moonshot-v1-128k"),
+        ("kimi", "kimi-k2-0711"),
         ("minimax", "MiniMax-M2.5"),
         ("minimax-m2.5", "MiniMax-M2.5"),
         ("minimax-m2.1", "MiniMax-M2.1"),
@@ -1556,44 +1576,16 @@ fn builtin_models() -> Vec<ModelCatalogEntry> {
         // OpenRouter (11)
         // ══════════════════════════════════════════════════════════════
         ModelCatalogEntry {
-            id: "openrouter/auto".into(),
-            display_name: "OpenRouter Auto".into(),
+            id: "openrouter/openai/gpt-4o".into(),
+            display_name: "GPT-4o (OpenRouter)".into(),
             provider: "openrouter".into(),
             tier: ModelTier::Smart,
-            context_window: 200_000,
-            max_output_tokens: 32_000,
-            input_cost_per_m: 1.0,
-            output_cost_per_m: 3.0,
+            context_window: 128_000,
+            max_output_tokens: 16_384,
+            input_cost_per_m: 2.5,
+            output_cost_per_m: 10.0,
             supports_tools: true,
             supports_vision: true,
-            supports_streaming: true,
-            aliases: vec![],
-        },
-        ModelCatalogEntry {
-            id: "openrouter/optimus".into(),
-            display_name: "OpenRouter Optimus".into(),
-            provider: "openrouter".into(),
-            tier: ModelTier::Balanced,
-            context_window: 200_000,
-            max_output_tokens: 32_000,
-            input_cost_per_m: 0.50,
-            output_cost_per_m: 1.50,
-            supports_tools: true,
-            supports_vision: false,
-            supports_streaming: true,
-            aliases: vec![],
-        },
-        ModelCatalogEntry {
-            id: "openrouter/nitro".into(),
-            display_name: "OpenRouter Nitro".into(),
-            provider: "openrouter".into(),
-            tier: ModelTier::Fast,
-            context_window: 128_000,
-            max_output_tokens: 16_000,
-            input_cost_per_m: 0.20,
-            output_cost_per_m: 0.60,
-            supports_tools: true,
-            supports_vision: false,
             supports_streaming: true,
             aliases: vec![],
         },
@@ -2929,7 +2921,7 @@ fn builtin_models() -> Vec<ModelCatalogEntry> {
             aliases: vec!["codegeex".into()],
         },
         // ══════════════════════════════════════════════════════════════
-        // Moonshot / Kimi (3)
+        // Moonshot / Kimi (5)
         // ══════════════════════════════════════════════════════════════
         ModelCatalogEntry {
             id: "moonshot-v1-128k".into(),
@@ -2943,7 +2935,7 @@ fn builtin_models() -> Vec<ModelCatalogEntry> {
             supports_tools: true,
             supports_vision: false,
             supports_streaming: true,
-            aliases: vec!["kimi".into()],
+            aliases: vec![],
         },
         ModelCatalogEntry {
             id: "moonshot-v1-32k".into(),
@@ -2972,6 +2964,34 @@ fn builtin_models() -> Vec<ModelCatalogEntry> {
             supports_vision: false,
             supports_streaming: true,
             aliases: vec![],
+        },
+        ModelCatalogEntry {
+            id: "kimi-k2-0711".into(),
+            display_name: "Kimi K2".into(),
+            provider: "moonshot".into(),
+            tier: ModelTier::Frontier,
+            context_window: 131_072,
+            max_output_tokens: 16_384,
+            input_cost_per_m: 2.00,
+            output_cost_per_m: 8.00,
+            supports_tools: true,
+            supports_vision: true,
+            supports_streaming: true,
+            aliases: vec!["kimi-k2".into()],
+        },
+        ModelCatalogEntry {
+            id: "kimi-k2.5-0711".into(),
+            display_name: "Kimi K2.5".into(),
+            provider: "moonshot".into(),
+            tier: ModelTier::Frontier,
+            context_window: 131_072,
+            max_output_tokens: 16_384,
+            input_cost_per_m: 2.00,
+            output_cost_per_m: 8.00,
+            supports_tools: true,
+            supports_vision: true,
+            supports_streaming: true,
+            aliases: vec!["kimi-k2.5".into()],
         },
         // ══════════════════════════════════════════════════════════════
         // Baidu Qianfan / ERNIE (3)
@@ -3346,7 +3366,7 @@ mod tests {
     #[test]
     fn test_catalog_has_providers() {
         let catalog = ModelCatalog::new();
-        assert_eq!(catalog.list_providers().len(), 35);
+        assert_eq!(catalog.list_providers().len(), 36);
     }
 
     #[test]
