@@ -520,6 +520,7 @@ fn builtin_providers() -> Vec<ProviderInfo> {
             key_required: false,
             auth_status: AuthStatus::NotRequired,
             model_count: 0,
+            is_local: false,
         },
         ProviderInfo {
             id: "lemonade".into(),
