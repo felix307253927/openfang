@@ -685,10 +685,13 @@ pub async fn run_agent_loop(
                 }
 
                 // Detect approval denials and inject guidance to prevent infinite retry loops
-                let denial_count = tool_result_blocks.iter().filter(|b| {
-                    matches!(b, ContentBlock::ToolResult { content, is_error: true, .. }
+                let denial_count = tool_result_blocks
+                    .iter()
+                    .filter(|b| {
+                        matches!(b, ContentBlock::ToolResult { content, is_error: true, .. }
                         if content.contains("requires human approval and was denied"))
-                }).count();
+                    })
+                    .count();
                 if denial_count > 0 {
                     tool_result_blocks.push(ContentBlock::Text {
                         text: format!(
@@ -1270,6 +1273,7 @@ pub async fn run_agent_loop_streaming(
         match response.stop_reason {
             StopReason::EndTurn | StopReason::StopSequence => {
                 let text = response.text();
+                debug!("LLM response text (streaming): {:?}", text);
 
                 // Parse reply directives from the streaming response text
                 let (cleaned_text_s, parsed_directives_s) =
@@ -1608,10 +1612,13 @@ pub async fn run_agent_loop_streaming(
                 }
 
                 // Detect approval denials and inject guidance to prevent infinite retry loops
-                let denial_count = tool_result_blocks.iter().filter(|b| {
-                    matches!(b, ContentBlock::ToolResult { content, is_error: true, .. }
+                let denial_count = tool_result_blocks
+                    .iter()
+                    .filter(|b| {
+                        matches!(b, ContentBlock::ToolResult { content, is_error: true, .. }
                         if content.contains("requires human approval and was denied"))
-                }).count();
+                    })
+                    .count();
                 if denial_count > 0 {
                     tool_result_blocks.push(ContentBlock::Text {
                         text: format!(

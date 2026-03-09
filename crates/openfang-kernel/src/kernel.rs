@@ -642,9 +642,7 @@ impl OpenFangKernel {
 
         // Use the chain, or create a stub driver if everything failed
         let driver: Arc<dyn LlmDriver> = if driver_chain.len() > 1 {
-            Arc::new(openfang_runtime::drivers::fallback::FallbackDriver::with_models(
-                model_chain,
-            ))
+            Arc::new(openfang_runtime::drivers::fallback::FallbackDriver::with_models(model_chain))
         } else if let Some(single) = driver_chain.into_iter().next() {
             single
         } else {
@@ -794,7 +792,10 @@ impl OpenFangKernel {
             if let Some(ref provider) = config.memory.embedding_provider {
                 // Explicit config takes priority — use the configured embedding model
                 let api_key_env = config.memory.embedding_api_key_env.as_deref().unwrap_or("");
-                let custom_url = config.provider_urls.get(provider.as_str()).map(|s| s.as_str());
+                let custom_url = config
+                    .provider_urls
+                    .get(provider.as_str())
+                    .map(|s| s.as_str());
                 match create_embedding_driver(provider, configured_model, api_key_env, custom_url) {
                     Ok(d) => {
                         info!(provider = %provider, model = %configured_model, "Embedding driver configured from memory config");
@@ -1676,6 +1677,7 @@ impl OpenFangKernel {
             };
             manifest.model.system_prompt =
                 openfang_runtime::prompt_builder::build_system_prompt(&prompt_ctx);
+            tracing::debug!(system_prompt = %manifest.model.system_prompt, "Built system prompt");
             // Store canonical context separately for injection as user message
             // (keeps system prompt stable across turns for provider prompt caching)
             if let Some(cc_msg) =
@@ -3392,7 +3394,9 @@ impl OpenFangKernel {
             info!("Restoring {} persisted hand(s)", saved_hands.len());
             for (hand_id, config) in saved_hands {
                 match self.activate_hand(&hand_id, config) {
-                    Ok(inst) => info!(hand = %hand_id, instance = %inst.instance_id, "Hand restored"),
+                    Ok(inst) => {
+                        info!(hand = %hand_id, instance = %inst.instance_id, "Hand restored")
+                    }
                     Err(e) => warn!(hand = %hand_id, error = %e, "Failed to restore hand"),
                 }
             }

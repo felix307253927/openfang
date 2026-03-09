@@ -1,6 +1,13 @@
-//! OpenAI-compatible API driver.
+/*
+ * @Author             : Felix
+ * @Email              : 307253927@qq.com
+ * @Date               : 2026-03-09 13:50:06
+ * @LastEditors        : Felix
+ * @LastEditTime       : 2026-03-09 14:31:31
+ */
+//! UniGPT-compatible API driver.
 //!
-//! Works with OpenAI, Ollama, vLLM, and any other OpenAI-compatible endpoint.
+//! Works with UniGPT, Ollama, vLLM, and any other UniGPT-compatible endpoint.
 
 use crate::llm_driver::{CompletionRequest, CompletionResponse, LlmDriver, LlmError, StreamEvent};
 use async_trait::async_trait;
@@ -11,16 +18,16 @@ use serde::{Deserialize, Serialize};
 use tracing::{debug, info, warn};
 use zeroize::Zeroizing;
 
-/// OpenAI-compatible API driver.
-pub struct OpenAIDriver {
+/// UniGPT-compatible API driver.
+pub struct UniGPTDriver {
     api_key: Zeroizing<String>,
     base_url: String,
     client: reqwest::Client,
     extra_headers: Vec<(String, String)>,
 }
 
-impl OpenAIDriver {
-    /// Create a new OpenAI-compatible driver.
+impl UniGPTDriver {
+    /// Create a new UniGPT-compatible driver.
     pub fn new(api_key: String, base_url: String) -> Self {
         Self {
             api_key: Zeroizing::new(api_key),
@@ -38,9 +45,9 @@ impl OpenAIDriver {
 }
 
 #[derive(Debug, Serialize)]
-struct OaiRequest {
+struct UniGPTRequest {
     model: String,
-    messages: Vec<OaiMessage>,
+    messages: Vec<UniMessage>,
     /// Classic token limit field (used by most models).
     #[serde(skip_serializing_if = "Option::is_none")]
     max_tokens: Option<u32>,
@@ -50,26 +57,16 @@ struct OaiRequest {
     #[serde(skip_serializing_if = "Option::is_none")]
     temperature: Option<f32>,
     #[serde(skip_serializing_if = "Vec::is_empty")]
-    tools: Vec<OaiTool>,
+    tools: Vec<UniTool>,
     #[serde(skip_serializing_if = "Option::is_none")]
     tool_choice: Option<serde_json::Value>,
     #[serde(skip_serializing_if = "std::ops::Not::not")]
     stream: bool,
 }
 
-/// Returns true if a model uses `max_completion_tokens` instead of `max_tokens`.
-fn uses_completion_tokens(model: &str) -> bool {
-    let m = model.to_lowercase();
-    m.starts_with("gpt-5")
-        || m.starts_with("gpt5")
-        || m.starts_with("o1")
-        || m.starts_with("o3")
-        || m.starts_with("o4")
-}
-
 /// Returns true if a model rejects the `temperature` parameter.
 ///
-/// OpenAI's o-series reasoning models and some GPT-5 variants do not support
+/// UniGPT's o-series reasoning models and some GPT-5 variants do not support
 /// temperature and return 400 if it is included.
 fn rejects_temperature(model: &str) -> bool {
     let m = model.to_lowercase();
@@ -77,12 +74,12 @@ fn rejects_temperature(model: &str) -> bool {
 }
 
 #[derive(Debug, Serialize)]
-struct OaiMessage {
+struct UniMessage {
     role: String,
     #[serde(skip_serializing_if = "Option::is_none")]
-    content: Option<OaiMessageContent>,
+    content: Option<UniMessageContent>,
     #[serde(skip_serializing_if = "Option::is_none")]
-    tool_calls: Option<Vec<OaiToolCall>>,
+    tool_calls: Option<Vec<UniToolCall>>,
     #[serde(skip_serializing_if = "Option::is_none")]
     tool_call_id: Option<String>,
 }
@@ -90,88 +87,88 @@ struct OaiMessage {
 /// Content can be a plain string or an array of content parts (for images).
 #[derive(Debug, Serialize)]
 #[serde(untagged)]
-enum OaiMessageContent {
+enum UniMessageContent {
     Text(String),
-    Parts(Vec<OaiContentPart>),
+    Parts(Vec<UniContentPart>),
 }
 
 /// A content part for multi-modal messages.
 #[derive(Debug, Serialize)]
 #[serde(tag = "type")]
-enum OaiContentPart {
+enum UniContentPart {
     #[serde(rename = "text")]
     Text { text: String },
     #[serde(rename = "image_url")]
-    ImageUrl { image_url: OaiImageUrl },
+    ImageUrl { image_url: UniImageUrl },
 }
 
 #[derive(Debug, Serialize)]
-struct OaiImageUrl {
+struct UniImageUrl {
     url: String,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
-struct OaiToolCall {
+struct UniToolCall {
     id: String,
     #[serde(rename = "type")]
     call_type: String,
-    function: OaiFunction,
+    function: UniFunction,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
-struct OaiFunction {
+struct UniFunction {
     name: String,
     arguments: String,
 }
 
 #[derive(Debug, Serialize)]
-struct OaiTool {
+struct UniTool {
     #[serde(rename = "type")]
     tool_type: String,
-    function: OaiToolDef,
+    function: UniToolDef,
 }
 
 #[derive(Debug, Serialize)]
-struct OaiToolDef {
+struct UniToolDef {
     name: String,
     description: String,
     parameters: serde_json::Value,
 }
 
 #[derive(Debug, Deserialize)]
-struct OaiResponse {
-    choices: Vec<OaiChoice>,
-    usage: Option<OaiUsage>,
+struct UniResponse {
+    choices: Vec<UniChoice>,
+    usage: Option<UniUsage>,
 }
 
 #[derive(Debug, Deserialize)]
-struct OaiChoice {
-    message: OaiResponseMessage,
+struct UniChoice {
+    message: UniResponseMessage,
     finish_reason: Option<String>,
 }
 
 #[derive(Debug, Deserialize)]
-struct OaiResponseMessage {
+struct UniResponseMessage {
     content: Option<String>,
-    tool_calls: Option<Vec<OaiToolCall>>,
+    tool_calls: Option<Vec<UniToolCall>>,
 }
 
 #[derive(Debug, Deserialize)]
-struct OaiUsage {
+struct UniUsage {
     prompt_tokens: u64,
     completion_tokens: u64,
 }
 
 #[async_trait]
-impl LlmDriver for OpenAIDriver {
+impl LlmDriver for UniGPTDriver {
     async fn complete(&self, request: CompletionRequest) -> Result<CompletionResponse, LlmError> {
-        let mut oai_messages: Vec<OaiMessage> = Vec::new();
+        let mut uni_messages: Vec<UniMessage> = Vec::new();
 
         // Add system message if present
         if let Some(ref system) = request.system {
-            oai_messages.push(OaiMessage {
+            uni_messages.push(UniMessage {
                 role: "system".to_string(),
-                content: Some(OaiMessageContent::Text(system.clone())),
+                content: Some(UniMessageContent::Text(system.clone())),
                 tool_calls: None,
                 tool_call_id: None,
             });
@@ -182,33 +179,33 @@ impl LlmDriver for OpenAIDriver {
             match (&msg.role, &msg.content) {
                 (Role::System, MessageContent::Text(text)) => {
                     if request.system.is_none() {
-                        oai_messages.push(OaiMessage {
+                        uni_messages.push(UniMessage {
                             role: "system".to_string(),
-                            content: Some(OaiMessageContent::Text(text.clone())),
+                            content: Some(UniMessageContent::Text(text.clone())),
                             tool_calls: None,
                             tool_call_id: None,
                         });
                     }
                 }
                 (Role::User, MessageContent::Text(text)) => {
-                    oai_messages.push(OaiMessage {
+                    uni_messages.push(UniMessage {
                         role: "user".to_string(),
-                        content: Some(OaiMessageContent::Text(text.clone())),
+                        content: Some(UniMessageContent::Text(text.clone())),
                         tool_calls: None,
                         tool_call_id: None,
                     });
                 }
                 (Role::Assistant, MessageContent::Text(text)) => {
-                    oai_messages.push(OaiMessage {
+                    uni_messages.push(UniMessage {
                         role: "assistant".to_string(),
-                        content: Some(OaiMessageContent::Text(text.clone())),
+                        content: Some(UniMessageContent::Text(text.clone())),
                         tool_calls: None,
                         tool_call_id: None,
                     });
                 }
                 (Role::User, MessageContent::Blocks(blocks)) => {
                     // Handle tool results and images in user messages
-                    let mut parts: Vec<OaiContentPart> = Vec::new();
+                    let mut parts: Vec<UniContentPart> = Vec::new();
                     let mut has_tool_results = false;
                     for block in blocks {
                         match block {
@@ -218,9 +215,9 @@ impl LlmDriver for OpenAIDriver {
                                 ..
                             } => {
                                 has_tool_results = true;
-                                oai_messages.push(OaiMessage {
+                                uni_messages.push(UniMessage {
                                     role: "tool".to_string(),
-                                    content: Some(OaiMessageContent::Text(if content.is_empty() {
+                                    content: Some(UniMessageContent::Text(if content.is_empty() {
                                         "(empty)".to_string()
                                     } else {
                                         content.clone()
@@ -230,11 +227,11 @@ impl LlmDriver for OpenAIDriver {
                                 });
                             }
                             ContentBlock::Text { text } => {
-                                parts.push(OaiContentPart::Text { text: text.clone() });
+                                parts.push(UniContentPart::Text { text: text.clone() });
                             }
                             ContentBlock::Image { media_type, data } => {
-                                parts.push(OaiContentPart::ImageUrl {
-                                    image_url: OaiImageUrl {
+                                parts.push(UniContentPart::ImageUrl {
+                                    image_url: UniImageUrl {
                                         url: format!("data:{media_type};base64,{data}"),
                                     },
                                 });
@@ -244,9 +241,9 @@ impl LlmDriver for OpenAIDriver {
                         }
                     }
                     if !parts.is_empty() && !has_tool_results {
-                        oai_messages.push(OaiMessage {
+                        uni_messages.push(UniMessage {
                             role: "user".to_string(),
-                            content: Some(OaiMessageContent::Parts(parts)),
+                            content: Some(UniMessageContent::Parts(parts)),
                             tool_calls: None,
                             tool_call_id: None,
                         });
@@ -259,10 +256,10 @@ impl LlmDriver for OpenAIDriver {
                         match block {
                             ContentBlock::Text { text } => text_parts.push(text.clone()),
                             ContentBlock::ToolUse { id, name, input } => {
-                                tool_calls.push(OaiToolCall {
+                                tool_calls.push(UniToolCall {
                                     id: id.clone(),
                                     call_type: "function".to_string(),
-                                    function: OaiFunction {
+                                    function: UniFunction {
                                         name: name.clone(),
                                         arguments: serde_json::to_string(input).unwrap_or_default(),
                                     },
@@ -272,12 +269,12 @@ impl LlmDriver for OpenAIDriver {
                             _ => {}
                         }
                     }
-                    oai_messages.push(OaiMessage {
+                    uni_messages.push(UniMessage {
                         role: "assistant".to_string(),
                         content: if text_parts.is_empty() {
                             None
                         } else {
-                            Some(OaiMessageContent::Text(text_parts.join("")))
+                            Some(UniMessageContent::Text(text_parts.join("")))
                         },
                         tool_calls: if tool_calls.is_empty() {
                             None
@@ -291,12 +288,12 @@ impl LlmDriver for OpenAIDriver {
             }
         }
 
-        let oai_tools: Vec<OaiTool> = request
+        let uni_tools: Vec<UniTool> = request
             .tools
             .iter()
-            .map(|t| OaiTool {
+            .map(|t| UniTool {
                 tool_type: "function".to_string(),
-                function: OaiToolDef {
+                function: UniToolDef {
                     name: t.name.clone(),
                     description: t.description.clone(),
                     parameters: openfang_types::tool::normalize_schema_for_provider(
@@ -307,50 +304,44 @@ impl LlmDriver for OpenAIDriver {
             })
             .collect();
 
-        let tool_choice = if oai_tools.is_empty() {
+        let tool_choice = if uni_tools.is_empty() {
             None
         } else {
             Some(serde_json::json!("auto"))
         };
 
-        let (mt, mct) = if uses_completion_tokens(&request.model) {
-            (None, Some(request.max_tokens))
-        } else {
-            (Some(request.max_tokens), None)
-        };
-        let mut oai_request = OaiRequest {
+        let mut uni_request = UniGPTRequest {
             model: request.model.clone(),
-            messages: oai_messages,
-            max_tokens: mt,
-            max_completion_tokens: mct,
+            messages: uni_messages,
+            max_tokens: Some(request.max_tokens),
+            max_completion_tokens: Some(request.max_tokens),
             temperature: if rejects_temperature(&request.model) {
                 None
             } else {
                 Some(request.temperature)
             },
-            tools: oai_tools,
+            tools: uni_tools,
             tool_choice,
             stream: false,
         };
 
         let max_retries = 3;
         for attempt in 0..=max_retries {
-            let url = format!("{}/chat/completions", self.base_url);
-            info!(url = %url, attempt, "Sending OpenAI API request");
+            let url = format!("{}", self.base_url);
+            info!(url = %url, attempt, "Sending UniGPT API request");
             debug!(
                 "Request: {:?}",
-                serde_json::to_string(&oai_request).unwrap_or_default()
+                serde_json::to_string(&uni_request).unwrap_or_default()
             );
 
             let mut req_builder = self
                 .client
                 .post(&url)
                 .header("content-type", "application/json")
-                .json(&oai_request);
+                .json(&uni_request);
 
             if !self.api_key.as_str().is_empty() {
-                req_builder = req_builder
-                    .header("authorization", format!("Bearer {}", self.api_key.as_str()));
+                req_builder = req_builder.header("DeskToken", self.api_key.to_string());
             }
             for (k, v) in &self.extra_headers {
                 req_builder = req_builder.header(k, v);
@@ -397,11 +388,11 @@ impl LlmDriver for OpenAIDriver {
                 if status == 400
                     && body.contains("temperature")
                     && body.contains("unsupported_parameter")
-                    && oai_request.temperature.is_some()
+                    && uni_request.temperature.is_some()
                     && attempt < max_retries
                 {
-                    warn!(model = %oai_request.model, "Stripping temperature for this model");
-                    oai_request.temperature = None;
+                    warn!(model = %uni_request.model, "Stripping temperature for this model");
+                    uni_request.temperature = None;
                     continue;
                 }
 
@@ -410,21 +401,21 @@ impl LlmDriver for OpenAIDriver {
                     && body.contains("max_tokens")
                     && (body.contains("unsupported_parameter")
                         || body.contains("max_completion_tokens"))
-                    && oai_request.max_tokens.is_some()
+                    && uni_request.max_tokens.is_some()
                     && attempt < max_retries
                 {
-                    let val = oai_request.max_tokens.unwrap();
-                    warn!(model = %oai_request.model, "Switching to max_completion_tokens for this model");
-                    oai_request.max_tokens = None;
-                    oai_request.max_completion_tokens = Some(val);
+                    let val = uni_request.max_tokens.unwrap();
+                    warn!(model = %uni_request.model, "Switching to max_completion_tokens for this model");
+                    uni_request.max_tokens = None;
+                    uni_request.max_completion_tokens = Some(val);
                     continue;
                 }
 
                 // Auto-cap max_tokens when model rejects our value (e.g. Groq Maverick limit 8192)
                 if status == 400 && body.contains("max_tokens") && attempt < max_retries {
-                    let current = oai_request
+                    let current = uni_request
                         .max_tokens
-                        .or(oai_request.max_completion_tokens)
+                        .or(uni_request.max_completion_tokens)
                         .unwrap_or(4096);
                     let cap = extract_max_tokens_limit(&body).unwrap_or(current / 2);
                     warn!(
@@ -432,10 +423,10 @@ impl LlmDriver for OpenAIDriver {
                         new = cap,
                         "Auto-capping max_tokens to model limit"
                     );
-                    if oai_request.max_completion_tokens.is_some() {
-                        oai_request.max_completion_tokens = Some(cap);
+                    if uni_request.max_completion_tokens.is_some() {
+                        uni_request.max_completion_tokens = Some(cap);
                     } else {
-                        oai_request.max_tokens = Some(cap);
+                        uni_request.max_tokens = Some(cap);
                     }
                     continue;
                 }
@@ -443,7 +434,7 @@ impl LlmDriver for OpenAIDriver {
                 // Model doesn't support function calling — retry without tools
                 // (e.g. GLM-5 on DashScope returns 500 "internal error" when tools are sent)
                 let body_lower = body.to_lowercase();
-                if !oai_request.tools.is_empty()
+                if !uni_request.tools.is_empty()
                     && attempt < max_retries
                     && (status == 500
                         || body_lower.contains("internal error")
@@ -453,12 +444,12 @@ impl LlmDriver for OpenAIDriver {
                                     && body_lower.contains("not supported"))))
                 {
                     warn!(
-                        model = %oai_request.model,
+                        model = %uni_request.model,
                         status,
                         "Model may not support tools, retrying without tools"
                     );
-                    oai_request.tools.clear();
-                    oai_request.tool_choice = None;
+                    uni_request.tools.clear();
+                    uni_request.tool_choice = None;
                     continue;
                 }
 
@@ -472,10 +463,10 @@ impl LlmDriver for OpenAIDriver {
                 .text()
                 .await
                 .map_err(|e| LlmError::Http(e.to_string()))?;
-            let oai_response: OaiResponse =
+            let uni_response: UniResponse =
                 serde_json::from_str(&body).map_err(|e| LlmError::Parse(e.to_string()))?;
 
-            let choice = oai_response
+            let choice = uni_response
                 .choices
                 .into_iter()
                 .next()
@@ -520,7 +511,7 @@ impl LlmDriver for OpenAIDriver {
                 }
             };
 
-            let usage = oai_response
+            let usage = uni_response
                 .usage
                 .map(|u| TokenUsage {
                     input_tokens: u.prompt_tokens,
@@ -548,12 +539,12 @@ impl LlmDriver for OpenAIDriver {
         tx: tokio::sync::mpsc::Sender<StreamEvent>,
     ) -> Result<CompletionResponse, LlmError> {
         // Build request (same as complete but with stream: true)
-        let mut oai_messages: Vec<OaiMessage> = Vec::new();
+        let mut uni_messages: Vec<UniMessage> = Vec::new();
 
         if let Some(ref system) = request.system {
-            oai_messages.push(OaiMessage {
+            uni_messages.push(UniMessage {
                 role: "system".to_string(),
-                content: Some(OaiMessageContent::Text(system.clone())),
+                content: Some(UniMessageContent::Text(system.clone())),
                 tool_calls: None,
                 tool_call_id: None,
             });
@@ -563,26 +554,26 @@ impl LlmDriver for OpenAIDriver {
             match (&msg.role, &msg.content) {
                 (Role::System, MessageContent::Text(text)) => {
                     if request.system.is_none() {
-                        oai_messages.push(OaiMessage {
+                        uni_messages.push(UniMessage {
                             role: "system".to_string(),
-                            content: Some(OaiMessageContent::Text(text.clone())),
+                            content: Some(UniMessageContent::Text(text.clone())),
                             tool_calls: None,
                             tool_call_id: None,
                         });
                     }
                 }
                 (Role::User, MessageContent::Text(text)) => {
-                    oai_messages.push(OaiMessage {
+                    uni_messages.push(UniMessage {
                         role: "user".to_string(),
-                        content: Some(OaiMessageContent::Text(text.clone())),
+                        content: Some(UniMessageContent::Text(text.clone())),
                         tool_calls: None,
                         tool_call_id: None,
                     });
                 }
                 (Role::Assistant, MessageContent::Text(text)) => {
-                    oai_messages.push(OaiMessage {
+                    uni_messages.push(UniMessage {
                         role: "assistant".to_string(),
-                        content: Some(OaiMessageContent::Text(text.clone())),
+                        content: Some(UniMessageContent::Text(text.clone())),
                         tool_calls: None,
                         tool_call_id: None,
                     });
@@ -595,9 +586,9 @@ impl LlmDriver for OpenAIDriver {
                             ..
                         } = block
                         {
-                            oai_messages.push(OaiMessage {
+                            uni_messages.push(UniMessage {
                                 role: "tool".to_string(),
-                                content: Some(OaiMessageContent::Text(if content.is_empty() {
+                                content: Some(UniMessageContent::Text(if content.is_empty() {
                                     "(empty)".to_string()
                                 } else {
                                     content.clone()
@@ -615,10 +606,10 @@ impl LlmDriver for OpenAIDriver {
                         match block {
                             ContentBlock::Text { text } => text_parts.push(text.clone()),
                             ContentBlock::ToolUse { id, name, input } => {
-                                tool_calls_out.push(OaiToolCall {
+                                tool_calls_out.push(UniToolCall {
                                     id: id.clone(),
                                     call_type: "function".to_string(),
-                                    function: OaiFunction {
+                                    function: UniFunction {
                                         name: name.clone(),
                                         arguments: serde_json::to_string(input).unwrap_or_default(),
                                     },
@@ -628,12 +619,12 @@ impl LlmDriver for OpenAIDriver {
                             _ => {}
                         }
                     }
-                    oai_messages.push(OaiMessage {
+                    uni_messages.push(UniMessage {
                         role: "assistant".to_string(),
                         content: if text_parts.is_empty() {
                             None
                         } else {
-                            Some(OaiMessageContent::Text(text_parts.join("")))
+                            Some(UniMessageContent::Text(text_parts.join("")))
                         },
                         tool_calls: if tool_calls_out.is_empty() {
                             None
@@ -647,12 +638,12 @@ impl LlmDriver for OpenAIDriver {
             }
         }
 
-        let oai_tools: Vec<OaiTool> = request
+        let uni_tools: Vec<UniTool> = request
             .tools
             .iter()
-            .map(|t| OaiTool {
+            .map(|t| UniTool {
                 tool_type: "function".to_string(),
-                function: OaiToolDef {
+                function: UniToolDef {
                     name: t.name.clone(),
                     description: t.description.clone(),
                     parameters: openfang_types::tool::normalize_schema_for_provider(
@@ -663,28 +654,23 @@ impl LlmDriver for OpenAIDriver {
             })
             .collect();
 
-        let tool_choice = if oai_tools.is_empty() {
+        let tool_choice = if uni_tools.is_empty() {
             None
         } else {
             Some(serde_json::json!("auto"))
         };
 
-        let (mt, mct) = if uses_completion_tokens(&request.model) {
-            (None, Some(request.max_tokens))
-        } else {
-            (Some(request.max_tokens), None)
-        };
-        let mut oai_request = OaiRequest {
+        let mut uni_request = UniGPTRequest {
             model: request.model.clone(),
-            messages: oai_messages,
-            max_tokens: mt,
-            max_completion_tokens: mct,
+            messages: uni_messages,
+            max_tokens: Some(request.max_tokens),
+            max_completion_tokens: Some(request.max_tokens),
             temperature: if rejects_temperature(&request.model) {
                 None
             } else {
                 Some(request.temperature)
             },
-            tools: oai_tools,
+            tools: uni_tools,
             tool_choice,
             stream: true,
         };
@@ -692,22 +678,21 @@ impl LlmDriver for OpenAIDriver {
         // Retry loop for the initial HTTP request
         let max_retries = 3;
         for attempt in 0..=max_retries {
-            let url = format!("{}/chat/completions", self.base_url);
-            info!(url = %url, attempt, "Sending OpenAI streaming request");
+            let url = format!("{}", self.base_url);
+            info!(url = %url, attempt, "Sending UniGPT streaming request");
             debug!(
                 "Request: {:?}",
-                serde_json::to_string(&oai_request).unwrap_or_default()
+                serde_json::to_string(&uni_request).unwrap_or_default()
             );
 
             let mut req_builder = self
                 .client
                 .post(&url)
                 .header("content-type", "application/json")
-                .json(&oai_request);
+                .json(&uni_request);
 
             if !self.api_key.as_str().is_empty() {
-                req_builder = req_builder
-                    .header("authorization", format!("Bearer {}", self.api_key.as_str()));
+                req_builder = req_builder.header("DeskToken", self.api_key.to_string());
             }
             for (k, v) in &self.extra_headers {
                 req_builder = req_builder.header(k, v);
@@ -755,11 +740,11 @@ impl LlmDriver for OpenAIDriver {
                 if status == 400
                     && body.contains("temperature")
                     && body.contains("unsupported_parameter")
-                    && oai_request.temperature.is_some()
+                    && uni_request.temperature.is_some()
                     && attempt < max_retries
                 {
-                    warn!(model = %oai_request.model, "Stripping temperature for this model (stream)");
-                    oai_request.temperature = None;
+                    warn!(model = %uni_request.model, "Stripping temperature for this model (stream)");
+                    uni_request.temperature = None;
                     continue;
                 }
 
@@ -768,35 +753,35 @@ impl LlmDriver for OpenAIDriver {
                     && body.contains("max_tokens")
                     && (body.contains("unsupported_parameter")
                         || body.contains("max_completion_tokens"))
-                    && oai_request.max_tokens.is_some()
+                    && uni_request.max_tokens.is_some()
                     && attempt < max_retries
                 {
-                    let val = oai_request.max_tokens.unwrap();
-                    warn!(model = %oai_request.model, "Switching to max_completion_tokens for this model (stream)");
-                    oai_request.max_tokens = None;
-                    oai_request.max_completion_tokens = Some(val);
+                    let val = uni_request.max_tokens.unwrap();
+                    warn!(model = %uni_request.model, "Switching to max_completion_tokens for this model (stream)");
+                    uni_request.max_tokens = None;
+                    uni_request.max_completion_tokens = Some(val);
                     continue;
                 }
 
                 // Auto-cap max_tokens when model rejects our value
                 if status == 400 && body.contains("max_tokens") && attempt < max_retries {
-                    let current = oai_request
+                    let current = uni_request
                         .max_tokens
-                        .or(oai_request.max_completion_tokens)
+                        .or(uni_request.max_completion_tokens)
                         .unwrap_or(4096);
                     let cap = extract_max_tokens_limit(&body).unwrap_or(current / 2);
                     warn!(old = current, new = cap, "Auto-capping max_tokens (stream)");
-                    if oai_request.max_completion_tokens.is_some() {
-                        oai_request.max_completion_tokens = Some(cap);
+                    if uni_request.max_completion_tokens.is_some() {
+                        uni_request.max_completion_tokens = Some(cap);
                     } else {
-                        oai_request.max_tokens = Some(cap);
+                        uni_request.max_tokens = Some(cap);
                     }
                     continue;
                 }
 
                 // Model doesn't support function calling — retry without tools
                 let body_lower = body.to_lowercase();
-                if !oai_request.tools.is_empty()
+                if !uni_request.tools.is_empty()
                     && attempt < max_retries
                     && (status == 500
                         || body_lower.contains("internal error")
@@ -806,12 +791,12 @@ impl LlmDriver for OpenAIDriver {
                                     && body_lower.contains("not supported"))))
                 {
                     warn!(
-                        model = %oai_request.model,
+                        model = %uni_request.model,
                         status,
                         "Model may not support tools (stream), retrying without tools"
                     );
-                    oai_request.tools.clear();
-                    oai_request.tool_choice = None;
+                    uni_request.tools.clear();
+                    uni_request.tool_choice = None;
                     continue;
                 }
 
@@ -1109,7 +1094,7 @@ mod tests {
 
     #[test]
     fn test_openai_driver_creation() {
-        let driver = OpenAIDriver::new("test-key".to_string(), "http://localhost".to_string());
+        let driver = UniGPTDriver::new("test-key".to_string(), "http://localhost".to_string());
         assert_eq!(driver.api_key.as_str(), "test-key");
     }
 

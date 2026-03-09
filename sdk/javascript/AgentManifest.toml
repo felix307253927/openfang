@@ -1,0 +1,218 @@
+# ========== 基本信息 ==========
+
+name = "my-agent"
+version = "0.1.0"
+description = "A helpful AI assistant"
+author = "developer@example.com"
+
+# 模块路径: "builtin:chat", "builtin:voice", "/path/to/agent.wasm", "/path/to/agent.py"
+module = "builtin:chat"
+
+# ========== 调度模式 ==========
+
+# 模式1: Reactive - 有消息时响应 (默认)
+schedule.mode = "reactive"
+
+# 模式2: Periodic - 定时执行
+# [schedule]
+# mode = "periodic"
+# cron = "0 9 * * *"  # 每天早上9点执行
+
+# 模式3: Proactive - 条件触发
+# [schedule]
+# mode = "proactive"
+# conditions = ["cpu > 80%", "memory > 90%"]
+
+# 模式4: Continuous - 持续运行
+# [schedule]
+# mode = "continuous"
+# check_interval_secs = 60
+
+# ========== LLM 模型配置 ==========
+
+[model]
+# LLM provider: "anthropic", "openai", "groq", "together", "ollama", "mistral", etc.
+provider = "anthropic"
+
+# Model identifier
+model = "claude-sonnet-4-20250514"
+
+# Maximum tokens for completion
+max_tokens = 4096
+
+# Sampling temperature (0.0-1.0). Higher = more creative.
+temperature = 0.7
+
+# System prompt for the agent
+system_prompt = "You are a helpful AI agent."
+
+# Optional API key environment variable name
+# api_key_env = "ANTHROPIC_API_KEY"
+
+# Optional base URL override for the provider
+# base_url = "https://api.anthropic.com"
+
+# ========== 备用模型链 ==========
+# 当主模型失败时，按顺序尝试备选模型
+
+# [[fallback_models]]
+# provider = "openai"
+# model = "gpt-4o"
+
+# [[fallback_models]]
+# provider = "groq"
+# model = "llama-3.3-70b-versatile"
+# api_key_env = "GROQ_API_KEY"
+
+# ========== 资源配额 ==========
+
+[resources]
+# Maximum WASM memory in bytes. Default: 256MB (268435456)
+max_memory_bytes = 268435456
+
+# Maximum CPU time per invocation in ms. Default: 30000ms
+max_cpu_time_ms = 30000
+
+# Maximum tool calls per minute. Default: 60
+max_tool_calls_per_minute = 60
+
+# Maximum LLM tokens per hour. Default: 1000000
+max_llm_tokens_per_hour = 1000000
+
+# Maximum network bytes per hour. Default: 100MB (104857600)
+max_network_bytes_per_hour = 104857600
+
+# Maximum cost per hour in USD. Default: 1.0
+max_cost_per_hour_usd = 1.0
+
+# Maximum cost per day in USD. 0.0 = unlimited. Default: 0.0
+max_cost_per_day_usd = 0.0
+
+# Maximum cost per month in USD. 0.0 = unlimited. Default: 0.0
+max_cost_per_month_usd = 0.0
+
+# ========== 优先级 ==========
+# Values: "low", "normal", "high", "critical". Default: "normal"
+priority = "normal"
+
+# ========== 权限声明 (Capabilities) ==========
+
+[capabilities]
+# Allowed network hosts
+# network = ["api.anthropic.com:443", "*.github.com"]
+
+# Allowed tool IDs. Use ["*"] for all tools
+# tools = ["file_read", "web_fetch"]
+
+# Memory read scopes
+# memory_read = ["self.*", "shared:*"]
+
+# Memory write scopes
+# memory_write = ["self.*"]
+
+# Whether this agent can spawn sub-agents
+# agent_spawn = false
+
+# Agent message patterns. Use ["*"] for all
+# agent_message = []
+
+# Allowed shell commands. Use ["*"] for all
+# shell = []
+
+# Whether this agent can discover remote agents via OFP
+# ofp_discover = false
+
+# Allowed OFP peer patterns
+# ofp_connect = []
+
+# ========== 工具预设 (Profile) ==========
+# Values: "minimal", "coding", "research", "messaging", "automation", "full", "custom"
+# 
+# minimal    = ["file_read", "file_list"]
+# coding      = ["file_read", "file_write", "file_list", "shell_exec", "web_fetch"]
+# research    = ["web_fetch", "web_search", "file_read", "file_write"]
+# messaging   = ["agent_send", "agent_list", "memory_store", "memory_recall"]
+# automation  = 包含以上所有工具
+# full        = 所有工具 ["*"]
+# custom      = 自定义 (需配合 tools 字段)
+# 
+# profile = "full"
+
+# ========== 工具特定配置 ==========
+
+# [tools.web_fetch]
+# params.timeout_ms = 30000
+# params.user_agent = "OpenFang/1.0"
+
+# [tools.shell_exec]
+# params.allowed_commands = ["git", "npm", "cargo"]
+# params.timeout_ms = 60000
+
+# ========== Skills 配置 ==========
+# 空数组 = 所有 skills 可用
+# 非空 = 只有列出的 skills 可用
+# skills = []
+
+# ========== MCP Servers 配置 ==========
+# 空数组 = 所有连接的 MCP servers 可用
+# 非空 = 只有列出的 MCP servers 可用
+# mcp_servers = []
+
+# ========== 自定义元数据 ==========
+
+# [metadata]
+# team = "platform"
+# environment = "production"
+
+# ========== 标签 ==========
+# tags = ["assistant", "general", "production"]
+
+# ========== 模型路由 (Model Routing) ==========
+# 根据查询复杂度自动选择模型
+
+# [routing]
+# simple_model = "claude-haiku-4-5-20251001"
+# medium_model = "claude-sonnet-4-20250514"
+# complex_model = "claude-sonnet-4-20250514"
+# simple_threshold = 100
+# complex_threshold = 500
+
+# ========== 自主运行配置 (Autonomous) ==========
+# 用于 24/7 运行的 Agent
+
+# [autonomous]
+# # Cron expression for quiet hours
+# quiet_hours = "0 22 * * * 0 6 * * *"  # 晚上10点到早上6点休息
+# 
+# max_iterations = 50          # 每次调用的最大迭代次数
+# max_restarts = 10           # 最大重启次数
+# heartbeat_interval_secs = 30  # 心跳间隔（秒）
+# 
+# # 心跳通知渠道
+# # heartbeat_channel = "telegram"
+# # heartbeat_channel = "discord"
+
+# ========== 其他配置 ==========
+
+# Pinned model override (used in Stable mode)
+# pinned_model = "claude-sonnet-4-20250514"
+
+# Agent workspace directory. Default: {workspaces_dir}/{agent_name}-{agent_id_prefix}/
+# workspace = "/path/to/workspace"
+
+# Whether to generate identity files (SOUL.md, USER.md, etc.) on creation
+generate_identity_files = true
+
+# Per-agent exec policy override
+# [exec_policy]
+# allowed_networks = ["*"]
+# allowed_shell = ["*"]
+
+# ========== 工具白名单/黑名单 ==========
+
+# Tool allowlist - only these tools are available
+# 空数组 = 所有工具可用
+# tool_allowlist = []
+
+# Tool blocklist - these tools are excluded (applied after allowlist)
+# tool_blocklist = []

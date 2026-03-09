@@ -48,6 +48,8 @@ pub const MODELSCOPE_BASE_URL: &str = "https://api-inference.modelscope.cn/v1";
 pub const SILICONFLOW_BASE_URL: &str = "https://api.siliconflow.cn/v1";
 pub const VOLCENGINE_BASE_URL: &str = "https://ark.cn-beijing.volces.com/api/v3";
 pub const VOLCENGINE_CODING_BASE_URL: &str = "https://ark.cn-beijing.volces.com/api/coding/v3";
+pub const UNIGPT_BASE_URL: &str =
+    "https://syapi.yunmaolink.com/sy-model-gateway/u/labs/ai/openapi/chat";
 
 // ── AWS Bedrock ───────────────────────────────────────────────────
 pub const BEDROCK_BASE_URL: &str = "https://bedrock-runtime.us-east-1.amazonaws.com";

@@ -1,3 +1,10 @@
+/*
+ * @Author             : Felix
+ * @Email              : 307253927@qq.com
+ * @Date               : 2026-03-09 09:16:01
+ * @LastEditors        : Felix
+ * @LastEditTime       : 2026-03-09 14:51:19
+ */
 //! OpenFang daemon server — boots the kernel and serves the HTTP API.
 
 use crate::agent;
@@ -99,7 +106,9 @@ pub async fn build_router(
         )
         .route(
             "/api/agents/{id}",
-            axum::routing::get(routes::get_agent).delete(routes::kill_agent).patch(routes::patch_agent),
+            axum::routing::get(routes::get_agent)
+                .delete(routes::kill_agent)
+                .patch(routes::patch_agent),
         )
         .route(
             "/api/agents/{id}/mode",
@@ -637,6 +646,10 @@ pub async fn build_router(
         .route(
             "/v1/models",
             axum::routing::get(crate::openai_compat::list_models),
+        )
+        .route(
+            "/unigpt/models",
+            axum::routing::post(crate::unigpt::update_models),
         )
         .layer(axum::middleware::from_fn_with_state(
             api_key,

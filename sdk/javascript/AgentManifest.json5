@@ -1,0 +1,264 @@
+{
+  // ========== 基本信息 ==========
+  
+  /** Human-readable agent name. */
+  name: "my-agent",
+  
+  /** Semantic version. */
+  version: "0.1.0",
+  
+  /** Description of what this agent does. */
+  description: "A helpful AI assistant",
+  
+  /** Author identifier. */
+  author: "developer@example.com",
+  
+  /** 
+   * Path to the agent module.
+   * - "builtin:chat" - built-in chat module
+   * - "builtin:voice" - built-in voice module  
+   * - "/path/to/agent.wasm" - WASM module
+   * - "/path/to/agent.py" - Python module
+   */
+  module: "builtin:chat",
+  
+  /** Scheduling mode. */
+  schedule: {
+    // 模式1: Reactive - 有消息时响应 (默认)
+    mode: "reactive",
+    
+    // 模式2: Periodic - 定时执行
+    // mode: "periodic",
+    // cron: "0 9 * * *",  // 每天早上9点执行
+    
+    // 模式3: Proactive - 条件触发
+    // mode: "proactive",
+    // conditions: ["cpu > 80%", "memory > 90%"],
+    
+    // 模式4: Continuous - 持续运行
+    // mode: "continuous",
+    // check_interval_secs: 60
+  },
+  
+  /** LLM model configuration. */
+  model: {
+    /** LLM provider name: "anthropic", "openai", "groq", "together", "ollama", etc. */
+    provider: "anthropic",
+    
+    /** Model identifier. */
+    model: "claude-sonnet-4-20250514",
+    
+    /** Maximum tokens for completion. */
+    max_tokens: 4096,
+    
+    /** Sampling temperature (0.0-1.0). Higher = more creative. */
+    temperature: 0.7,
+    
+    /** System prompt for the agent. */
+    system_prompt: "You are a helpful AI agent.",
+    
+    /** Optional API key environment variable name. */
+    api_key_env: null,  // e.g., "ANTHROPIC_API_KEY"
+    
+    /** Optional base URL override for the provider. */
+    base_url: null  // e.g., "https://api.anthropic.com"
+  },
+  
+  /** 
+   * Fallback model chain — tried in order if the primary model fails.
+   * 当主模型失败时，按顺序尝试备选模型。
+   */
+  fallback_models: [
+    {
+      provider: "openai",
+      model: "gpt-4o",
+      api_key_env: null,
+      base_url: null
+    },
+    {
+      provider: "groq",
+      model: "llama-3.3-70b-versatile",
+      api_key_env: "GROQ_API_KEY",
+      base_url: null
+    }
+  ],
+  
+  /** Resource quotas. */
+  resources: {
+    /** Maximum WASM memory in bytes. Default: 256MB */
+    max_memory_bytes: 268435456,
+    
+    /** Maximum CPU time per invocation in ms. Default: 30000ms */
+    max_cpu_time_ms: 30000,
+    
+    /** Maximum tool calls per minute. Default: 60 */
+    max_tool_calls_per_minute: 60,
+    
+    /** Maximum LLM tokens per hour. Default: 1000000 */
+    max_llm_tokens_per_hour: 1000000,
+    
+    /** Maximum network bytes per hour. Default: 100MB */
+    max_network_bytes_per_hour: 104857600,
+    
+    /** Maximum cost per hour in USD. Default: 1.0 */
+    max_cost_per_hour_usd: 1.0,
+    
+    /** Maximum cost per day in USD. 0.0 = unlimited. Default: 0.0 */
+    max_cost_per_day_usd: 0.0,
+    
+    /** Maximum cost per month in USD. 0.0 = unlimited. Default: 0.0 */
+    max_cost_per_month_usd: 0.0
+  },
+  
+  /** 
+   * Priority level for scheduling.
+   * Values: "low", "normal", "high", "critical"
+   * Default: "normal"
+   */
+  priority: "normal",
+  
+  /** Capability grants - 权限声明. */
+  capabilities: {
+    /** Allowed network hosts. e.g., ["api.anthropic.com:443", "*.github.com"] */
+    network: [],
+    
+    /** Allowed tool IDs. e.g., ["file_read", "web_fetch"] or ["*"] for all */
+    tools: [],
+    
+    /** Memory read scopes. e.g., ["self.*", "shared:*"] */
+    memory_read: ["self.*"],
+    
+    /** Memory write scopes. */
+    memory_write: ["self.*"],
+    
+    /** Whether this agent can spawn sub-agents. */
+    agent_spawn: false,
+    
+    /** Agent message patterns. e.g., ["*"] or ["agent-name"] */
+    agent_message: [],
+    
+    /** Allowed shell commands. e.g., ["ls", "cat", "git"] or ["*"] */
+    shell: [],
+    
+    /** Whether this agent can discover remote agents via OFP. */
+    ofp_discover: false,
+    
+    /** Allowed OFP peer patterns. */
+    ofp_connect: []
+  },
+  
+  /** 
+   * Named tool profile — expands to tool list + derived capabilities.
+   * 值: "minimal", "coding", "research", "messaging", "automation", "full", "custom"
+   * 
+   * - minimal: ["file_read", "file_list"]
+   * - coding: ["file_read", "file_write", "file_list", "shell_exec", "web_fetch"]
+   * - research: ["web_fetch", "web_search", "file_read", "file_write"]
+   * - messaging: ["agent_send", "agent_list", "memory_store", "memory_recall"]
+   * - automation: 包含以上所有工具
+   * - full: 所有工具 ["*"]
+   * - custom: 自定义 (需配合 tools 字段)
+   */
+  profile: null,  // 或 "full"
+  
+  /** Tool-specific configurations - 针对特定工具的配置参数. */
+  tools: {
+    "web_fetch": {
+      "params": {
+        "timeout_ms": 30000,
+        "user_agent": "OpenFang/1.0"
+      }
+    },
+    "shell_exec": {
+      "params": {
+        "allowed_commands": ["git", "npm", "cargo"],
+        "timeout_ms": 60000
+      }
+    }
+  },
+  
+  /** 
+   * Installed skill references.
+   * 空数组 = 所有 skills 都可用
+   * 非空 = 只有列出的 skills 可用
+   */
+  skills: [],
+  
+  /** 
+   * MCP server allowlist.
+   * 空数组 = 所有连接的 MCP servers 都可用
+   * 非空 = 只有列出的 MCP servers 可用
+   */
+  mcp_servers: [],
+  
+  /** Custom metadata - 自定义元数据. */
+  metadata: {
+    "team": "platform",
+    "environment": "production",
+    "custom_field": "any value"
+  },
+  
+  /** Tags for agent discovery and categorization. */
+  tags: ["assistant", "general", "production"],
+  
+  /** Model routing configuration - auto-select models by complexity. */
+  routing: {
+    /** Model for simple queries. */
+    simple_model: "claude-haiku-4-5-20251001",
+    
+    /** Model for medium-complexity queries. */
+    medium_model: "claude-sonnet-4-20250514",
+    
+    /** Model for complex queries. */
+    complex_model: "claude-sonnet-4-20250514",
+    
+    /** Token threshold: below this = simple. */
+    simple_threshold: 100,
+    
+    /** Token threshold: above this = complex. */
+    complex_threshold: 500
+  },
+  
+  /** Autonomous agent configuration - for 24/7 agents. */
+  autonomous: {
+    /** Cron expression for quiet hours. e.g., "0 22 * * * 0 6 * * *" */
+    quiet_hours: null,  // e.g., "0 22 * * * 0 6 * * *"
+    
+    /** Maximum iterations per invocation. */
+    max_iterations: 50,
+    
+    /** Maximum restarts before permanently stopped. */
+    max_restarts: 10,
+    
+    /** Heartbeat interval in seconds. */
+    heartbeat_interval_secs: 30,
+    
+    /** Channel for heartbeat status. e.g., "telegram", "discord" */
+    heartbeat_channel: null
+  },
+  
+  /** Pinned model override - used in Stable mode. */
+  pinned_model: null,
+  
+  /** Agent workspace directory. Default: {workspaces_dir}/{agent_name}-{agent_id_prefix}/ */
+  workspace: null,
+  
+  /** Whether to generate identity files (SOUL.md, USER.md, etc.) on creation. */
+  generate_identity_files: true,
+  
+  /** Per-agent exec policy override. */
+  exec_policy: null,
+  
+  /** 
+   * Tool allowlist - only these tools are available.
+   * 空数组 = 所有工具可用
+   * 非空 = 只有列出的工具可用
+   */
+  tool_allowlist: [],
+  
+  /** 
+   * Tool blocklist - these tools are excluded.
+   * 在 allowlist 之后应用
+   */
+  tool_blocklist: []
+}
