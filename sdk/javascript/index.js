@@ -539,7 +539,7 @@ class ProviderResource {
 
   setUrl(name, url) {
     return this._c._request("PUT", "/api/providers/" + name + "/url", {
-      url: url,
+      base_url: url,
     });
   }
 }
