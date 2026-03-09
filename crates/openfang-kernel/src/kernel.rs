@@ -558,6 +558,17 @@ impl OpenFangKernel {
                     .get(&config.default_model.provider)
                     .cloned()
             }),
+            api_key: if config.default_model.api_key_env.is_empty() {
+                None
+            } else {
+                std::env::var(&config.default_model.api_key_env).ok()
+            },
+            base_url: config.default_model.base_url.clone().or_else(|| {
+                config
+                    .provider_urls
+                    .get(&config.default_model.provider)
+                    .cloned()
+            }),
         };
         // Primary driver failure is non-fatal: the dashboard should remain accessible
         // even if the LLM provider is misconfigured. Users can fix config via dashboard.
@@ -938,7 +949,7 @@ impl OpenFangKernel {
             workflows: WorkflowEngine::new(),
             triggers: TriggerEngine::new(),
             background,
-            audit_log: Arc::new(AuditLog::new()),
+            audit_log: Arc::new(AuditLog::with_db(memory.usage_conn())),
             metering,
             default_driver: driver,
             wasm_sandbox,
@@ -4765,8 +4776,8 @@ fn apply_budget_defaults(
     budget: &openfang_types::config::BudgetConfig,
     resources: &mut ResourceQuota,
 ) {
-    // Only override hourly if agent has the built-in default (1.0) and global is set
-    if budget.max_hourly_usd > 0.0 && resources.max_cost_per_hour_usd == 1.0 {
+    // Only override hourly if agent has unlimited (0.0) and global is set
+    if budget.max_hourly_usd > 0.0 && resources.max_cost_per_hour_usd == 0.0 {
         resources.max_cost_per_hour_usd = budget.max_hourly_usd;
     }
     // Only override daily/monthly if agent has unlimited (0.0) and global is set
