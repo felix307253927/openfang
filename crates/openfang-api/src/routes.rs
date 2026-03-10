@@ -5036,6 +5036,47 @@ pub async fn list_sessions(State(state): State<Arc<AppState>>) -> impl IntoRespo
     }
 }
 
+/// GET /api/sessions/:id — Get session details by session ID.
+pub async fn get_session(
+    State(state): State<Arc<AppState>>,
+    Path(id): Path<String>,
+) -> impl IntoResponse {
+    let session_id = match id.parse::<uuid::Uuid>() {
+        Ok(u) => openfang_types::agent::SessionId(u),
+        Err(_) => {
+            return (
+                StatusCode::BAD_REQUEST,
+                Json(serde_json::json!({"error": "Invalid session ID"})),
+            );
+        }
+    };
+
+    match state.kernel.memory.get_session(session_id) {
+        Ok(Some(session)) => {
+            let messages = serialize_session_messages(&session.messages);
+            (
+                StatusCode::OK,
+                Json(serde_json::json!({
+                    "session_id": session.id.0.to_string(),
+                    "agent_id": session.agent_id.0.to_string(),
+                    "message_count": session.messages.len(),
+                    "context_window_tokens": session.context_window_tokens,
+                    "label": session.label,
+                    "messages": messages,
+                })),
+            )
+        }
+        Ok(None) => (
+            StatusCode::NOT_FOUND,
+            Json(serde_json::json!({"error": "Session not found"})),
+        ),
+        Err(e) => (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            Json(serde_json::json!({"error": e.to_string()})),
+        ),
+    }
+}
+
 /// DELETE /api/sessions/:id — Delete a session.
 pub async fn delete_session(
     State(state): State<Arc<AppState>>,

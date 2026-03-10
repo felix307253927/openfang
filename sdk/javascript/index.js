@@ -356,6 +356,10 @@ class SessionResource {
       label: label,
     });
   }
+
+  async getSession(id) {
+    return this._c._request("GET", "/api/sessions/" + id);
+  }
 }
 
 // ── Workflow Resource ───────────────────────────────────────────
