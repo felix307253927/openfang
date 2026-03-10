@@ -77,7 +77,6 @@ fn uses_completion_tokens(model: &str) -> bool {
 /// We proactively omit `temperature` for these models to avoid wasting a retry.
 fn rejects_temperature(model: &str) -> bool {
     let m = model.to_lowercase();
-    m.starts_with("o1") || m.starts_with("o3") || m.starts_with("o4")
     // o-series reasoning models: o1, o1-mini, o1-preview, o3, o3-mini, o3-pro, o4-mini, etc.
     m.starts_with("o1")
         || m.starts_with("o3")

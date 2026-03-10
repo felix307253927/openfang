@@ -561,17 +561,6 @@ impl OpenFangKernel {
         };
         let driver_config = DriverConfig {
             provider: config.default_model.provider.clone(),
-            api_key: if config.default_model.api_key_env.is_empty() {
-                None
-            } else {
-                std::env::var(&config.default_model.api_key_env).ok()
-            },
-            base_url: config.default_model.base_url.clone().or_else(|| {
-                config
-                    .provider_urls
-                    .get(&config.default_model.provider)
-                    .cloned()
-            }),
             api_key: default_api_key,
             base_url: config.default_model.base_url.clone().or_else(|| {
                 config
@@ -1116,15 +1105,11 @@ impl OpenFangKernel {
                             if !dm.model.is_empty() {
                                 restored_entry.manifest.model.model = dm.model.clone();
                             }
-                            if !dm.api_key_env.is_empty()
-                                && restored_entry.manifest.model.api_key_env.is_none()
-                            {
+                            if !dm.api_key_env.is_empty() {
                                 restored_entry.manifest.model.api_key_env =
                                     Some(dm.api_key_env.clone());
                             }
-                            if dm.base_url.is_some()
-                                && restored_entry.manifest.model.base_url.is_none()
-                            {
+                            if dm.base_url.is_some() {
                                 restored_entry
                                     .manifest
                                     .model
@@ -3107,6 +3092,8 @@ impl OpenFangKernel {
             .list()
             .into_iter()
             .find(|e| e.name == def.agent.name);
+
+        let old_agent_id = existing.as_ref().map(|e| e.id);
         if let Some(old) = existing {
             info!(agent = %old.name, id = %old.id, "Removing existing hand agent for reactivation");
             let _ = self.kill_agent(old.id);
@@ -3470,7 +3457,32 @@ impl OpenFangKernel {
             for (hand_id, config, old_agent_id) in saved_hands {
                 match self.activate_hand(&hand_id, config) {
                     Ok(inst) => {
-                        info!(hand = %hand_id, instance = %inst.instance_id, "Hand restored")
+                        info!(hand = %hand_id, instance = %inst.instance_id, "Hand restored");
+                        // Reassign cron jobs from the pre-restart agent ID to the
+                        // newly spawned agent so scheduled tasks survive daemon
+                        // restarts (issue #402). activate_hand only handles
+                        // reassignment when an existing agent is found in the live
+                        // registry, which is empty on a fresh boot.
+                        if let (Some(old_id), Some(new_id)) = (old_agent_id, inst.agent_id) {
+                            if old_id != new_id {
+                                let migrated =
+                                    self.cron_scheduler.reassign_agent_jobs(old_id, new_id);
+                                if migrated > 0 {
+                                    info!(
+                                        hand = %hand_id,
+                                        old_agent = %old_id,
+                                        new_agent = %new_id,
+                                        migrated,
+                                        "Reassigned cron jobs after restart"
+                                    );
+                                    if let Err(e) = self.cron_scheduler.persist() {
+                                        warn!(
+                                            "Failed to persist cron jobs after hand restore: {e}"
+                                        );
+                                    }
+                                }
+                            }
+                        }
                     }
                     Err(e) => warn!(hand = %hand_id, error = %e, "Failed to restore hand"),
                 }
@@ -4077,7 +4089,7 @@ impl OpenFangKernel {
             let base_url = if has_custom_url {
                 manifest.model.base_url.clone()
             } else if agent_provider == default_provider {
-                self.config.default_model.base_url.clone().or_else(|| {
+                effective_default.base_url.clone().or_else(|| {
                     self.config
                         .provider_urls
                         .get(agent_provider.as_str())
