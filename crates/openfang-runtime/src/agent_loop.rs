@@ -11,7 +11,7 @@ use crate::kernel_handle::KernelHandle;
 use crate::llm_driver::{CompletionRequest, LlmDriver, LlmError, StreamEvent};
 use crate::llm_errors;
 use crate::loop_guard::{LoopGuard, LoopGuardConfig, LoopGuardVerdict};
-use crate::mcp::McpConnection;
+use crate::mcp_auto::McpConnection;
 use crate::tool_runner;
 use crate::web_search::WebToolsContext;
 use openfang_memory::session::Session;
@@ -704,9 +704,10 @@ pub async fn run_agent_loop(
                 }
 
                 // Detect tool errors and inject guidance to prevent fabrication
-                let error_count = tool_result_blocks.iter().filter(|b| {
-                    matches!(b, ContentBlock::ToolResult { is_error: true, .. })
-                }).count();
+                let error_count = tool_result_blocks
+                    .iter()
+                    .filter(|b| matches!(b, ContentBlock::ToolResult { is_error: true, .. }))
+                    .count();
                 let non_denial_errors = error_count.saturating_sub(denial_count);
                 if non_denial_errors > 0 {
                     tool_result_blocks.push(ContentBlock::Text {
@@ -1648,9 +1649,10 @@ pub async fn run_agent_loop_streaming(
                 }
 
                 // Detect tool errors and inject guidance to prevent fabrication
-                let error_count = tool_result_blocks.iter().filter(|b| {
-                    matches!(b, ContentBlock::ToolResult { is_error: true, .. })
-                }).count();
+                let error_count = tool_result_blocks
+                    .iter()
+                    .filter(|b| matches!(b, ContentBlock::ToolResult { is_error: true, .. }))
+                    .count();
                 let non_denial_errors = error_count.saturating_sub(denial_count);
                 if non_denial_errors > 0 {
                     tool_result_blocks.push(ContentBlock::Text {

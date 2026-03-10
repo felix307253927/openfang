@@ -4,7 +4,7 @@
 //! (agent_send, agent_spawn, etc.) require a KernelHandle to be passed in.
 
 use crate::kernel_handle::KernelHandle;
-use crate::mcp;
+use crate::mcp_auto;
 use crate::web_search::{parse_ddg_results, WebToolsContext};
 use openfang_skills::registry::SkillRegistry;
 use openfang_types::taint::{TaintLabel, TaintSink, TaintedValue};
@@ -27,20 +27,11 @@ fn check_taint_shell_exec(command: &str) -> Option<String> {
     // Layer 1: Block shell metacharacters that enable command injection.
     // Uses the same validator as subprocess_sandbox and docker_sandbox.
     if let Some(reason) = crate::subprocess_sandbox::contains_shell_metacharacters(command) {
-        return Some(format!(
-            "Shell metacharacter injection blocked: {reason}"
-        ));
+        return Some(format!("Shell metacharacter injection blocked: {reason}"));
     }
 
     // Layer 2: Heuristic patterns for injected external URLs / base64 payloads
-    let suspicious_patterns = [
-        "curl ",
-        "wget ",
-        "| sh",
-        "| bash",
-        "base64 -d",
-        "eval ",
-    ];
+    let suspicious_patterns = ["curl ", "wget ", "| sh", "| bash", "base64 -d", "eval "];
     for pattern in &suspicious_patterns {
         if command.contains(pattern) {
             let mut labels = HashSet::new();
@@ -112,7 +103,7 @@ pub async fn execute_tool(
     allowed_tools: Option<&[String]>,
     caller_agent_id: Option<&str>,
     skill_registry: Option<&SkillRegistry>,
-    mcp_connections: Option<&tokio::sync::Mutex<Vec<mcp::McpConnection>>>,
+    mcp_connections: Option<&tokio::sync::Mutex<Vec<mcp_auto::McpConnection>>>,
     web_ctx: Option<&WebToolsContext>,
     browser_ctx: Option<&crate::browser::BrowserManager>,
     allowed_env_vars: Option<&[String]>,
@@ -197,7 +188,9 @@ pub async fn execute_tool(
             let headers = input.get("headers").and_then(|v| v.as_object());
             let body = input["body"].as_str();
             if let Some(ctx) = web_ctx {
-                ctx.fetch.fetch_with_options(url, method, headers, body).await
+                ctx.fetch
+                    .fetch_with_options(url, method, headers, body)
+                    .await
             } else {
                 tool_web_fetch_legacy(input).await
             }
@@ -218,7 +211,8 @@ pub async fn execute_tool(
 
             // SECURITY: Always check for shell metacharacters, even in Full mode.
             // These enable command injection regardless of exec policy.
-            if let Some(reason) = crate::subprocess_sandbox::contains_shell_metacharacters(command) {
+            if let Some(reason) = crate::subprocess_sandbox::contains_shell_metacharacters(command)
+            {
                 return ToolResult {
                     tool_use_id: tool_use_id.to_string(),
                     content: format!(
@@ -360,8 +354,7 @@ pub async fn execute_tool(
                     crate::browser::tool_browser_navigate(input, mgr, aid).await
                 }
                 None => Err(
-                    "Browser tools not available. Ensure Chrome/Chromium is installed."
-                        .to_string(),
+                    "Browser tools not available. Ensure Chrome/Chromium is installed.".to_string(),
                 ),
             }
         }
@@ -370,63 +363,81 @@ pub async fn execute_tool(
                 let aid = caller_agent_id.unwrap_or("default");
                 crate::browser::tool_browser_click(input, mgr, aid).await
             }
-            None => Err("Browser tools not available. Ensure Chrome/Chromium is installed.".to_string()),
+            None => {
+                Err("Browser tools not available. Ensure Chrome/Chromium is installed.".to_string())
+            }
         },
         "browser_type" => match browser_ctx {
             Some(mgr) => {
                 let aid = caller_agent_id.unwrap_or("default");
                 crate::browser::tool_browser_type(input, mgr, aid).await
             }
-            None => Err("Browser tools not available. Ensure Chrome/Chromium is installed.".to_string()),
+            None => {
+                Err("Browser tools not available. Ensure Chrome/Chromium is installed.".to_string())
+            }
         },
         "browser_screenshot" => match browser_ctx {
             Some(mgr) => {
                 let aid = caller_agent_id.unwrap_or("default");
                 crate::browser::tool_browser_screenshot(input, mgr, aid).await
             }
-            None => Err("Browser tools not available. Ensure Chrome/Chromium is installed.".to_string()),
+            None => {
+                Err("Browser tools not available. Ensure Chrome/Chromium is installed.".to_string())
+            }
         },
         "browser_read_page" => match browser_ctx {
             Some(mgr) => {
                 let aid = caller_agent_id.unwrap_or("default");
                 crate::browser::tool_browser_read_page(input, mgr, aid).await
             }
-            None => Err("Browser tools not available. Ensure Chrome/Chromium is installed.".to_string()),
+            None => {
+                Err("Browser tools not available. Ensure Chrome/Chromium is installed.".to_string())
+            }
         },
         "browser_close" => match browser_ctx {
             Some(mgr) => {
                 let aid = caller_agent_id.unwrap_or("default");
                 crate::browser::tool_browser_close(input, mgr, aid).await
             }
-            None => Err("Browser tools not available. Ensure Chrome/Chromium is installed.".to_string()),
+            None => {
+                Err("Browser tools not available. Ensure Chrome/Chromium is installed.".to_string())
+            }
         },
         "browser_scroll" => match browser_ctx {
             Some(mgr) => {
                 let aid = caller_agent_id.unwrap_or("default");
                 crate::browser::tool_browser_scroll(input, mgr, aid).await
             }
-            None => Err("Browser tools not available. Ensure Chrome/Chromium is installed.".to_string()),
+            None => {
+                Err("Browser tools not available. Ensure Chrome/Chromium is installed.".to_string())
+            }
         },
         "browser_wait" => match browser_ctx {
             Some(mgr) => {
                 let aid = caller_agent_id.unwrap_or("default");
                 crate::browser::tool_browser_wait(input, mgr, aid).await
             }
-            None => Err("Browser tools not available. Ensure Chrome/Chromium is installed.".to_string()),
+            None => {
+                Err("Browser tools not available. Ensure Chrome/Chromium is installed.".to_string())
+            }
         },
         "browser_run_js" => match browser_ctx {
             Some(mgr) => {
                 let aid = caller_agent_id.unwrap_or("default");
                 crate::browser::tool_browser_run_js(input, mgr, aid).await
             }
-            None => Err("Browser tools not available. Ensure Chrome/Chromium is installed.".to_string()),
+            None => {
+                Err("Browser tools not available. Ensure Chrome/Chromium is installed.".to_string())
+            }
         },
         "browser_back" => match browser_ctx {
             Some(mgr) => {
                 let aid = caller_agent_id.unwrap_or("default");
                 crate::browser::tool_browser_back(input, mgr, aid).await
             }
-            None => Err("Browser tools not available. Ensure Chrome/Chromium is installed.".to_string()),
+            None => {
+                Err("Browser tools not available. Ensure Chrome/Chromium is installed.".to_string())
+            }
         },
 
         // Canvas / A2UI tool
@@ -434,9 +445,9 @@ pub async fn execute_tool(
 
         other => {
             // Fallback 1: MCP tools (mcp_{server}_{tool} prefix)
-            if mcp::is_mcp_tool(other) {
+            if mcp_auto::is_mcp_tool(other) {
                 if let Some(mcp_conns) = mcp_connections {
-                    if let Some(server_name) = mcp::extract_mcp_server(other) {
+                    if let Some(server_name) = mcp_auto::extract_mcp_server(other) {
                         let mut conns = mcp_conns.lock().await;
                         if let Some(conn) = conns.iter_mut().find(|c| c.name() == server_name) {
                             debug!(
