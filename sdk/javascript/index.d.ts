@@ -51,7 +51,9 @@ export class OpenFang {
 export class AgentResource {
   list(): Promise<unknown[]>;
   get(id: string): Promise<unknown>;
-  create(opts: AgentCreateOpts): Promise<{ id: string; [key: string]: unknown }>;
+  create(
+    opts: AgentCreateOpts
+  ): Promise<{ id: string; [key: string]: unknown }>;
   delete(id: string): Promise<unknown>;
   stop(id: string): Promise<unknown>;
   clone(id: string): Promise<unknown>;
@@ -59,7 +61,11 @@ export class AgentResource {
   setMode(id: string, mode: string): Promise<unknown>;
   setModel(id: string, model: string): Promise<unknown>;
   message(id: string, text: string, opts?: MessageOpts): Promise<unknown>;
-  stream(id: string, text: string, opts?: MessageOpts): AsyncGenerator<StreamEvent>;
+  stream(
+    id: string,
+    text: string,
+    opts?: MessageOpts
+  ): AsyncGenerator<StreamEvent>;
   session(id: string): Promise<unknown>;
   resetSession(id: string): Promise<unknown>;
   compactSession(id: string): Promise<unknown>;
@@ -115,6 +121,7 @@ export class ProviderResource {
   setKey(name: string, key: string): Promise<unknown>;
   deleteKey(name: string): Promise<unknown>;
   test(name: string): Promise<unknown>;
+  setUrl(name: string, url: string): Promise<unknown>;
 }
 
 export class MemoryResource {

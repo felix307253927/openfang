@@ -450,7 +450,7 @@ pub async fn build_router(
         .route("/api/sessions", axum::routing::get(routes::list_sessions))
         .route(
             "/api/sessions/{id}",
-            axum::routing::delete(routes::delete_session),
+            axum::routing::delete(routes::delete_session).get(routes::get_session),
         )
         .route(
             "/api/sessions/{id}/label",
