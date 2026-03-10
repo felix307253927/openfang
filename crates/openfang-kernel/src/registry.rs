@@ -61,6 +61,20 @@ impl AgentRegistry {
         Ok(())
     }
 
+    pub fn set_exec_policy(
+        &self,
+        id: AgentId,
+        policy: Option<openfang_types::config::ExecPolicy>,
+    ) -> OpenFangResult<()> {
+        let mut entry = self
+            .agents
+            .get_mut(&id)
+            .ok_or_else(|| OpenFangError::AgentNotFound(id.to_string()))?;
+        entry.manifest.exec_policy = policy;
+        entry.last_active = chrono::Utc::now();
+        Ok(())
+    }
+
     /// Update agent operational mode.
     pub fn set_mode(&self, id: AgentId, mode: AgentMode) -> OpenFangResult<()> {
         let mut entry = self

@@ -773,9 +773,9 @@ pub enum ExecSecurityMode {
     #[serde(alias = "none", alias = "disabled")]
     Deny,
     /// Only allow commands in safe_bins or allowed_commands.
-    #[default]
     #[serde(alias = "restricted")]
     Allowlist,
+    #[default]
     /// Allow all commands (unsafe, dev only).
     #[serde(alias = "allow", alias = "all", alias = "unrestricted")]
     Full,
@@ -3731,10 +3731,7 @@ mod tests {
             }],
         );
         // Auth profiles take precedence over convention (but not explicit mapping)
-        assert_eq!(
-            config.resolve_api_key_env("nvidia"),
-            "NVIDIA_PRIMARY_KEY"
-        );
+        assert_eq!(config.resolve_api_key_env("nvidia"), "NVIDIA_PRIMARY_KEY");
     }
 
     #[test]

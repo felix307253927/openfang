@@ -11,7 +11,7 @@ use crate::kernel_handle::KernelHandle;
 use crate::llm_driver::{CompletionRequest, LlmDriver, LlmError, StreamEvent};
 use crate::llm_errors;
 use crate::loop_guard::{LoopGuard, LoopGuardConfig, LoopGuardVerdict};
-use crate::mcp_auto::McpConnection;
+use crate::mcp::McpConnection;
 use crate::tool_runner;
 use crate::web_search::WebToolsContext;
 use openfang_memory::session::Session;

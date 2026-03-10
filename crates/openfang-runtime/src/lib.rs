@@ -26,7 +26,7 @@ pub mod link_understanding;
 pub mod llm_driver;
 pub mod llm_errors;
 pub mod loop_guard;
-pub mod mcp_auto;
+pub mod mcp;
 pub mod mcp_server;
 pub mod media_understanding;
 pub mod model_catalog;
@@ -51,5 +51,3 @@ pub mod web_fetch;
 pub mod web_search;
 pub mod workspace_context;
 pub mod workspace_sandbox;
-
-pub use mcp_auto as mcp;

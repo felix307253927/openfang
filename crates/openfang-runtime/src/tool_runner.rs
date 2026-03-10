@@ -4,7 +4,7 @@
 //! (agent_send, agent_spawn, etc.) require a KernelHandle to be passed in.
 
 use crate::kernel_handle::KernelHandle;
-use crate::mcp_auto;
+use crate::mcp;
 use crate::web_search::{parse_ddg_results, WebToolsContext};
 use openfang_skills::registry::SkillRegistry;
 use openfang_types::taint::{TaintLabel, TaintSink, TaintedValue};
@@ -104,7 +104,7 @@ pub async fn execute_tool(
     allowed_tools: Option<&[String]>,
     caller_agent_id: Option<&str>,
     skill_registry: Option<&SkillRegistry>,
-    mcp_connections: Option<&tokio::sync::Mutex<Vec<mcp_auto::McpConnection>>>,
+    mcp_connections: Option<&tokio::sync::Mutex<Vec<mcp::McpConnection>>>,
     web_ctx: Option<&WebToolsContext>,
     browser_ctx: Option<&crate::browser::BrowserManager>,
     allowed_env_vars: Option<&[String]>,
@@ -450,9 +450,9 @@ pub async fn execute_tool(
 
         other => {
             // Fallback 1: MCP tools (mcp_{server}_{tool} prefix)
-            if mcp_auto::is_mcp_tool(other) {
+            if mcp::is_mcp_tool(other) {
                 if let Some(mcp_conns) = mcp_connections {
-                    if let Some(server_name) = mcp_auto::extract_mcp_server(other) {
+                    if let Some(server_name) = mcp::extract_mcp_server(other) {
                         let mut conns = mcp_conns.lock().await;
                         if let Some(conn) = conns.iter_mut().find(|c| c.name() == server_name) {
                             debug!(
@@ -3301,7 +3301,11 @@ mod tests {
             None, // process_manager
         )
         .await;
-        assert!(result.is_error, "Expected error but got: {}", result.content);
+        assert!(
+            result.is_error,
+            "Expected error but got: {}",
+            result.content
+        );
     }
 
     #[tokio::test]
@@ -3515,10 +3519,17 @@ mod tests {
         )
         .await;
         // Should fail for file-not-found, NOT for permission denied
-        assert!(result.is_error, "Expected error but got: {}", result.content);
         assert!(
-            result.content.contains("Failed to read") || result.content.contains("not found") || result.content.contains("No such file"),
-            "Unexpected error: {}", result.content
+            result.is_error,
+            "Expected error but got: {}",
+            result.content
+        );
+        assert!(
+            result.content.contains("Failed to read")
+                || result.content.contains("not found")
+                || result.content.contains("No such file"),
+            "Unexpected error: {}",
+            result.content
         );
     }
 
