@@ -1376,7 +1376,7 @@ impl std::fmt::Debug for KernelConfig {
 /// Resolve the OpenFang home directory.
 ///
 /// Priority: `OPENFANG_HOME` env var > `~/.openfang`.
-fn openfang_home_dir() -> PathBuf {
+pub fn openfang_home_dir() -> PathBuf {
     if let Ok(home) = std::env::var("OPENFANG_HOME") {
         return PathBuf::from(home);
     }
