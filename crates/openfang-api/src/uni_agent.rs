@@ -125,7 +125,7 @@ pub async fn spawn_agent(
             );
         }
     };
-
+    tracing::debug!("Manifest: {:?}", manifest.model);
     if manifest.model.provider.is_empty() || manifest.model.provider == "default" {
         let default_model = state.kernel.config.default_model.clone();
         let mut model = ModelConfig::default();
