@@ -830,11 +830,11 @@ impl LlmDriver for UniGPTDriver {
             Some(serde_json::json!("auto"))
         };
 
-        let (mt, mct) = if uses_completion_tokens(&request.model) {
-            (None, Some(request.max_tokens))
-        } else {
-            (Some(request.max_tokens), None)
-        };
+        // let (mt, mct) = if uses_completion_tokens(&request.model) {
+        //     (None, Some(request.max_tokens))
+        // } else {
+        //     (Some(request.max_tokens), None)
+        // };
         let mut uni_request = UniGPTRequest {
             model: request.model.clone(),
             messages: uni_messages,
