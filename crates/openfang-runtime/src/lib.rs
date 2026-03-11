@@ -3,6 +3,10 @@
 //! Manages the agent execution loop, LLM driver abstraction,
 //! tool execution, and WASM sandboxing for untrusted skill/plugin code.
 
+/// Default User-Agent header sent with all outgoing HTTP requests.
+/// Some LLM providers (e.g. Moonshot, Qwen) reject requests without one.
+pub const USER_AGENT: &str = "openfang/0.3.45";
+
 pub mod a2a;
 pub mod agent_loop;
 pub mod apply_patch;
@@ -26,7 +30,7 @@ pub mod link_understanding;
 pub mod llm_driver;
 pub mod llm_errors;
 pub mod loop_guard;
-pub mod mcp_auto;
+pub mod mcp;
 pub mod mcp_server;
 pub mod media_understanding;
 pub mod model_catalog;
@@ -42,6 +46,7 @@ pub mod session_repair;
 pub mod shell_bleed;
 pub mod str_utils;
 pub mod subprocess_sandbox;
+pub mod think_filter;
 pub mod tool_policy;
 pub mod tool_runner;
 pub mod tts;
@@ -51,5 +56,3 @@ pub mod web_fetch;
 pub mod web_search;
 pub mod workspace_context;
 pub mod workspace_sandbox;
-
-pub use mcp_auto as mcp;

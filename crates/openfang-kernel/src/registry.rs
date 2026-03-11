@@ -61,6 +61,20 @@ impl AgentRegistry {
         Ok(())
     }
 
+    pub fn set_exec_policy(
+        &self,
+        id: AgentId,
+        policy: Option<openfang_types::config::ExecPolicy>,
+    ) -> OpenFangResult<()> {
+        let mut entry = self
+            .agents
+            .get_mut(&id)
+            .ok_or_else(|| OpenFangError::AgentNotFound(id.to_string()))?;
+        entry.manifest.exec_policy = policy;
+        entry.last_active = chrono::Utc::now();
+        Ok(())
+    }
+
     /// Update agent operational mode.
     pub fn set_mode(&self, id: AgentId, mode: AgentMode) -> OpenFangResult<()> {
         let mut entry = self
@@ -284,6 +298,7 @@ impl AgentRegistry {
         hourly: Option<f64>,
         daily: Option<f64>,
         monthly: Option<f64>,
+        tokens_per_hour: Option<u64>,
     ) -> OpenFangResult<()> {
         let mut entry = self
             .agents
@@ -297,6 +312,9 @@ impl AgentRegistry {
         }
         if let Some(v) = monthly {
             entry.manifest.resources.max_cost_per_month_usd = v;
+        }
+        if let Some(v) = tokens_per_hour {
+            entry.manifest.resources.max_llm_tokens_per_hour = v;
         }
         entry.last_active = chrono::Utc::now();
         Ok(())

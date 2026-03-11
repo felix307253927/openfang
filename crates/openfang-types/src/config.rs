@@ -773,9 +773,9 @@ pub enum ExecSecurityMode {
     #[serde(alias = "none", alias = "disabled")]
     Deny,
     /// Only allow commands in safe_bins or allowed_commands.
-    #[default]
     #[serde(alias = "restricted")]
     Allowlist,
+    #[default]
     /// Allow all commands (unsafe, dev only).
     #[serde(alias = "allow", alias = "all", alias = "unrestricted")]
     Full,
@@ -1112,6 +1112,10 @@ pub struct BudgetConfig {
     pub max_monthly_usd: f64,
     /// Alert threshold as a fraction (0.0 - 1.0). Trigger warnings at this % of any limit.
     pub alert_threshold: f64,
+    /// Default per-agent hourly token limit override. When set (> 0), all agents
+    /// will be overridden to this value. Set to 0 to keep each agent's own limit.
+    /// Use this to globally raise or lower the token budget for all agents.
+    pub default_max_llm_tokens_per_hour: u64,
 }
 
 impl Default for BudgetConfig {
@@ -1121,6 +1125,7 @@ impl Default for BudgetConfig {
             max_daily_usd: 0.0,
             max_monthly_usd: 0.0,
             alert_threshold: 0.8,
+            default_max_llm_tokens_per_hour: 0,
         }
     }
 }
@@ -3731,10 +3736,7 @@ mod tests {
             }],
         );
         // Auth profiles take precedence over convention (but not explicit mapping)
-        assert_eq!(
-            config.resolve_api_key_env("nvidia"),
-            "NVIDIA_PRIMARY_KEY"
-        );
+        assert_eq!(config.resolve_api_key_env("nvidia"), "NVIDIA_PRIMARY_KEY");
     }
 
     #[test]

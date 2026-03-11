@@ -11,7 +11,7 @@ use crate::kernel_handle::KernelHandle;
 use crate::llm_driver::{CompletionRequest, LlmDriver, LlmError, StreamEvent};
 use crate::llm_errors;
 use crate::loop_guard::{LoopGuard, LoopGuardConfig, LoopGuardVerdict};
-use crate::mcp_auto::McpConnection;
+use crate::mcp::McpConnection;
 use crate::tool_runner;
 use crate::web_search::WebToolsContext;
 use openfang_memory::session::Session;
@@ -355,6 +355,7 @@ pub async fn run_agent_loop(
                         id: tc.id.clone(),
                         name: tc.name.clone(),
                         input: tc.input.clone(),
+                        provider_metadata: None,
                     });
                 }
                 response.content = new_blocks;
@@ -914,7 +915,11 @@ async fn call_with_retry(
             Err(e) => {
                 // Use classifier for smarter error handling
                 let raw_error = e.to_string();
-                let classified = llm_errors::classify_error(&raw_error, None);
+                let status = match &e {
+                    LlmError::Api { status, .. } => Some(*status),
+                    _ => None,
+                };
+                let classified = llm_errors::classify_error(&raw_error, status);
                 warn!(
                     category = ?classified.category,
                     retryable = classified.is_retryable,
@@ -1024,7 +1029,11 @@ async fn stream_with_retry(
             }
             Err(e) => {
                 let raw_error = e.to_string();
-                let classified = llm_errors::classify_error(&raw_error, None);
+                let status = match &e {
+                    LlmError::Api { status, .. } => Some(*status),
+                    _ => None,
+                };
+                let classified = llm_errors::classify_error(&raw_error, status);
                 warn!(
                     category = ?classified.category,
                     retryable = classified.is_retryable,
@@ -1319,6 +1328,7 @@ pub async fn run_agent_loop_streaming(
                         id: tc.id.clone(),
                         name: tc.name.clone(),
                         input: tc.input.clone(),
+                        provider_metadata: None,
                     });
                 }
                 response.content = new_blocks;
@@ -1814,6 +1824,7 @@ pub async fn run_agent_loop_streaming(
 /// 6. `[TOOL_CALL]...[/TOOL_CALL]` blocks (JSON or arrow syntax) — issue #354
 /// 7. `<tool_call>{"name":"tool","arguments":{...}}</tool_call>` — Qwen3, issue #332
 /// 8. Bare JSON `{"name":"tool","arguments":{...}}` objects (last resort, only if no tags found)
+/// 9. `<function name="tool" parameters="{...}" />` — XML attribute style (Groq/Llama)
 ///
 /// Validates tool names against available tools and returns synthetic `ToolCall` entries.
 fn recover_text_tool_calls(text: &str, available_tools: &[ToolDefinition]) -> Vec<ToolCall> {
@@ -2144,6 +2155,61 @@ fn recover_text_tool_calls(text: &str, available_tools: &[ToolDefinition]) -> Ve
                     input,
                 });
             }
+        }
+    }
+
+    // Pattern 9: <function name="tool" parameters="{...}" /> — XML attribute style
+    // Groq/Llama sometimes emit self-closing XML with name/parameters attributes.
+    // The parameters value is HTML-entity-escaped JSON (&quot; etc.).
+    {
+        use regex_lite::Regex;
+        // Match both self-closing <function ... /> and <function ...></function>
+        let re =
+            Regex::new(r#"<function\s+name="([^"]+)"\s+parameters="([^"]*)"[^/]*/?>"#).unwrap();
+        for caps in re.captures_iter(text) {
+            let tool_name = caps.get(1).unwrap().as_str();
+            let raw_params = caps.get(2).unwrap().as_str();
+
+            if !tool_names.contains(&tool_name) {
+                warn!(
+                    tool = tool_name,
+                    "XML-attribute tool call for unknown tool — skipping"
+                );
+                continue;
+            }
+
+            // Unescape HTML entities (&quot; &amp; &lt; &gt; &apos;)
+            let unescaped = raw_params
+                .replace("&quot;", "\"")
+                .replace("&amp;", "&")
+                .replace("&lt;", "<")
+                .replace("&gt;", ">")
+                .replace("&apos;", "'");
+
+            let input: serde_json::Value = match serde_json::from_str(&unescaped) {
+                Ok(v) => v,
+                Err(e) => {
+                    warn!(tool = tool_name, error = %e, "Failed to parse XML-attribute tool call params — skipping");
+                    continue;
+                }
+            };
+
+            if calls
+                .iter()
+                .any(|c| c.name == tool_name && c.input == input)
+            {
+                continue;
+            }
+
+            info!(
+                tool = tool_name,
+                "Recovered XML-attribute tool call → synthetic ToolUse"
+            );
+            calls.push(ToolCall {
+                id: format!("recovered_{}", uuid::Uuid::new_v4()),
+                name: tool_name.to_string(),
+                input,
+            });
         }
     }
 
@@ -2514,6 +2580,7 @@ mod tests {
                         id: "tool_1".to_string(),
                         name: "fake_tool".to_string(),
                         input: serde_json::json!({"query": "test"}),
+                        provider_metadata: None,
                     }],
                     stop_reason: StopReason::ToolUse,
                     tool_calls: vec![ToolCall {
@@ -3344,6 +3411,286 @@ mod tests {
             r#"<function=exec>{"command":"ls"}</function> <tool>exec{"command":"ls"}</tool>"#;
         let calls = recover_text_tool_calls(text, &tools);
         assert_eq!(calls.len(), 1);
+    }
+
+    // --- Pattern 6: [TOOL_CALL]...[/TOOL_CALL] tests (issue #354) ---
+
+    #[test]
+    fn test_recover_tool_call_block_json() {
+        let tools = vec![ToolDefinition {
+            name: "shell_exec".into(),
+            description: "Execute shell command".into(),
+            input_schema: serde_json::json!({}),
+        }];
+        let text = "[TOOL_CALL]\n{\"name\": \"shell_exec\", \"arguments\": {\"command\": \"ls -la\"}}\n[/TOOL_CALL]";
+        let calls = recover_text_tool_calls(text, &tools);
+        assert_eq!(calls.len(), 1);
+        assert_eq!(calls[0].name, "shell_exec");
+        assert_eq!(calls[0].input["command"], "ls -la");
+    }
+
+    #[test]
+    fn test_recover_tool_call_block_arrow_syntax() {
+        let tools = vec![ToolDefinition {
+            name: "shell_exec".into(),
+            description: "Execute shell command".into(),
+            input_schema: serde_json::json!({}),
+        }];
+        // Exact format from issue #354
+        let text = "[TOOL_CALL]\n{tool => \"shell_exec\", args => {\n--command \"ls -F /\"\n}}\n[/TOOL_CALL]";
+        let calls = recover_text_tool_calls(text, &tools);
+        assert_eq!(calls.len(), 1);
+        assert_eq!(calls[0].name, "shell_exec");
+        assert_eq!(calls[0].input["command"], "ls -F /");
+    }
+
+    #[test]
+    fn test_recover_tool_call_block_unknown_tool() {
+        let tools = vec![ToolDefinition {
+            name: "shell_exec".into(),
+            description: "Execute".into(),
+            input_schema: serde_json::json!({}),
+        }];
+        let text = "[TOOL_CALL]\n{\"name\": \"hack_system\", \"arguments\": {\"cmd\": \"rm -rf /\"}}\n[/TOOL_CALL]";
+        let calls = recover_text_tool_calls(text, &tools);
+        assert!(calls.is_empty());
+    }
+
+    #[test]
+    fn test_recover_tool_call_block_multiple() {
+        let tools = vec![
+            ToolDefinition {
+                name: "shell_exec".into(),
+                description: "Execute".into(),
+                input_schema: serde_json::json!({}),
+            },
+            ToolDefinition {
+                name: "file_read".into(),
+                description: "Read".into(),
+                input_schema: serde_json::json!({}),
+            },
+        ];
+        let text = "[TOOL_CALL]\n{\"name\": \"shell_exec\", \"arguments\": {\"command\": \"ls\"}}\n[/TOOL_CALL]\nSome text.\n[TOOL_CALL]\n{\"name\": \"file_read\", \"arguments\": {\"path\": \"/tmp/test.txt\"}}\n[/TOOL_CALL]";
+        let calls = recover_text_tool_calls(text, &tools);
+        assert_eq!(calls.len(), 2);
+        assert_eq!(calls[0].name, "shell_exec");
+        assert_eq!(calls[1].name, "file_read");
+    }
+
+    #[test]
+    fn test_recover_tool_call_block_unclosed() {
+        let tools = vec![ToolDefinition {
+            name: "shell_exec".into(),
+            description: "Execute".into(),
+            input_schema: serde_json::json!({}),
+        }];
+        // Unclosed [TOOL_CALL] — pattern 6 skips it, but pattern 8 (bare JSON)
+        // still finds the valid JSON tool call object.
+        let text = "[TOOL_CALL]\n{\"name\": \"shell_exec\", \"arguments\": {\"command\": \"ls\"}}";
+        let calls = recover_text_tool_calls(text, &tools);
+        assert_eq!(calls.len(), 1, "Bare JSON fallback should recover this");
+        assert_eq!(calls[0].name, "shell_exec");
+    }
+
+    // --- Pattern 7: <tool_call>JSON</tool_call> tests (Qwen3, issue #332) ---
+
+    #[test]
+    fn test_recover_tool_call_xml_basic() {
+        let tools = vec![ToolDefinition {
+            name: "shell_exec".into(),
+            description: "Execute".into(),
+            input_schema: serde_json::json!({}),
+        }];
+        let text = "<tool_call>\n{\"name\": \"shell_exec\", \"arguments\": {\"command\": \"ls -la\"}}\n</tool_call>";
+        let calls = recover_text_tool_calls(text, &tools);
+        assert_eq!(calls.len(), 1);
+        assert_eq!(calls[0].name, "shell_exec");
+        assert_eq!(calls[0].input["command"], "ls -la");
+    }
+
+    #[test]
+    fn test_recover_tool_call_xml_with_surrounding_text() {
+        let tools = vec![ToolDefinition {
+            name: "web_search".into(),
+            description: "Search".into(),
+            input_schema: serde_json::json!({}),
+        }];
+        let text = "I'll search for that.\n\n<tool_call>\n{\"name\": \"web_search\", \"arguments\": {\"query\": \"rust async\"}}\n</tool_call>\n\nLet me get results.";
+        let calls = recover_text_tool_calls(text, &tools);
+        assert_eq!(calls.len(), 1);
+        assert_eq!(calls[0].name, "web_search");
+        assert_eq!(calls[0].input["query"], "rust async");
+    }
+
+    #[test]
+    fn test_recover_tool_call_xml_function_field() {
+        let tools = vec![ToolDefinition {
+            name: "file_read".into(),
+            description: "Read".into(),
+            input_schema: serde_json::json!({}),
+        }];
+        let text = "<tool_call>{\"function\": \"file_read\", \"arguments\": {\"path\": \"/etc/hosts\"}}</tool_call>";
+        let calls = recover_text_tool_calls(text, &tools);
+        assert_eq!(calls.len(), 1);
+        assert_eq!(calls[0].name, "file_read");
+    }
+
+    #[test]
+    fn test_recover_tool_call_xml_parameters_field() {
+        let tools = vec![ToolDefinition {
+            name: "web_fetch".into(),
+            description: "Fetch".into(),
+            input_schema: serde_json::json!({}),
+        }];
+        let text = "<tool_call>{\"name\": \"web_fetch\", \"parameters\": {\"url\": \"https://example.com\"}}</tool_call>";
+        let calls = recover_text_tool_calls(text, &tools);
+        assert_eq!(calls.len(), 1);
+        assert_eq!(calls[0].name, "web_fetch");
+        assert_eq!(calls[0].input["url"], "https://example.com");
+    }
+
+    #[test]
+    fn test_recover_tool_call_xml_stringified_args() {
+        let tools = vec![ToolDefinition {
+            name: "shell_exec".into(),
+            description: "Execute".into(),
+            input_schema: serde_json::json!({}),
+        }];
+        let text = "<tool_call>{\"name\": \"shell_exec\", \"arguments\": \"{\\\"command\\\": \\\"pwd\\\"}\"}</tool_call>";
+        let calls = recover_text_tool_calls(text, &tools);
+        assert_eq!(calls.len(), 1);
+        assert_eq!(calls[0].name, "shell_exec");
+        assert_eq!(calls[0].input["command"], "pwd");
+    }
+
+    #[test]
+    fn test_recover_tool_call_xml_unknown_tool() {
+        let tools = vec![ToolDefinition {
+            name: "shell_exec".into(),
+            description: "Execute".into(),
+            input_schema: serde_json::json!({}),
+        }];
+        let text = "<tool_call>{\"name\": \"hack_system\", \"arguments\": {\"cmd\": \"rm -rf /\"}}</tool_call>";
+        let calls = recover_text_tool_calls(text, &tools);
+        assert!(calls.is_empty());
+    }
+
+    #[test]
+    fn test_recover_tool_call_xml_multiple() {
+        let tools = vec![
+            ToolDefinition {
+                name: "shell_exec".into(),
+                description: "Execute".into(),
+                input_schema: serde_json::json!({}),
+            },
+            ToolDefinition {
+                name: "web_search".into(),
+                description: "Search".into(),
+                input_schema: serde_json::json!({}),
+            },
+        ];
+        let text = "<tool_call>{\"name\": \"shell_exec\", \"arguments\": {\"command\": \"ls\"}}</tool_call>\n<tool_call>{\"name\": \"web_search\", \"arguments\": {\"query\": \"rust\"}}</tool_call>";
+        let calls = recover_text_tool_calls(text, &tools);
+        assert_eq!(calls.len(), 2);
+        assert_eq!(calls[0].name, "shell_exec");
+        assert_eq!(calls[1].name, "web_search");
+    }
+
+    // --- Pattern 8: Bare JSON tool call object tests ---
+
+    #[test]
+    fn test_recover_bare_json_tool_call() {
+        let tools = vec![ToolDefinition {
+            name: "shell_exec".into(),
+            description: "Execute".into(),
+            input_schema: serde_json::json!({}),
+        }];
+        let text =
+            "I'll run that: {\"name\": \"shell_exec\", \"arguments\": {\"command\": \"ls -la\"}}";
+        let calls = recover_text_tool_calls(text, &tools);
+        assert_eq!(calls.len(), 1);
+        assert_eq!(calls[0].name, "shell_exec");
+        assert_eq!(calls[0].input["command"], "ls -la");
+    }
+
+    #[test]
+    fn test_recover_bare_json_no_false_positive() {
+        let tools = vec![ToolDefinition {
+            name: "shell_exec".into(),
+            description: "Execute".into(),
+            input_schema: serde_json::json!({}),
+        }];
+        let text = "The config looks like {\"debug\": true, \"level\": \"info\"}";
+        let calls = recover_text_tool_calls(text, &tools);
+        assert!(calls.is_empty());
+    }
+
+    #[test]
+    fn test_recover_bare_json_skipped_when_tags_found() {
+        let tools = vec![ToolDefinition {
+            name: "shell_exec".into(),
+            description: "Execute".into(),
+            input_schema: serde_json::json!({}),
+        }];
+        let text = "<function=shell_exec>{\"command\":\"ls\"}</function> {\"name\": \"shell_exec\", \"arguments\": {\"command\": \"pwd\"}}";
+        let calls = recover_text_tool_calls(text, &tools);
+        assert_eq!(calls.len(), 1);
+        assert_eq!(calls[0].input["command"], "ls");
+    }
+
+    // --- Helper function tests ---
+
+    #[test]
+    fn test_parse_dash_dash_args_basic() {
+        let result = parse_dash_dash_args("{--command \"ls -F /\"}");
+        assert_eq!(result["command"], "ls -F /");
+    }
+
+    #[test]
+    fn test_parse_dash_dash_args_multiple() {
+        let result = parse_dash_dash_args("{--file \"test.txt\", --verbose}");
+        assert_eq!(result["file"], "test.txt");
+        assert_eq!(result["verbose"], true);
+    }
+
+    #[test]
+    fn test_parse_dash_dash_args_unquoted_value() {
+        let result = parse_dash_dash_args("{--count 5}");
+        assert_eq!(result["count"], "5");
+    }
+
+    #[test]
+    fn test_parse_json_tool_call_object_standard() {
+        let tool_names = vec!["shell_exec"];
+        let result = parse_json_tool_call_object(
+            "{\"name\": \"shell_exec\", \"arguments\": {\"command\": \"ls\"}}",
+            &tool_names,
+        );
+        assert!(result.is_some());
+        let (name, args) = result.unwrap();
+        assert_eq!(name, "shell_exec");
+        assert_eq!(args["command"], "ls");
+    }
+
+    #[test]
+    fn test_parse_json_tool_call_object_function_field() {
+        let tool_names = vec!["web_fetch"];
+        let result = parse_json_tool_call_object(
+            "{\"function\": \"web_fetch\", \"parameters\": {\"url\": \"https://x.com\"}}",
+            &tool_names,
+        );
+        assert!(result.is_some());
+        let (name, args) = result.unwrap();
+        assert_eq!(name, "web_fetch");
+        assert_eq!(args["url"], "https://x.com");
+    }
+
+    #[test]
+    fn test_parse_json_tool_call_object_unknown_tool() {
+        let tool_names = vec!["shell_exec"];
+        let result =
+            parse_json_tool_call_object("{\"name\": \"unknown\", \"arguments\": {}}", &tool_names);
+        assert!(result.is_none());
     }
 
     // --- End-to-end integration test: text-as-tool-call recovery through agent loop ---
