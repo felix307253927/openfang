@@ -298,6 +298,7 @@ impl AgentRegistry {
         hourly: Option<f64>,
         daily: Option<f64>,
         monthly: Option<f64>,
+        tokens_per_hour: Option<u64>,
     ) -> OpenFangResult<()> {
         let mut entry = self
             .agents
@@ -311,6 +312,9 @@ impl AgentRegistry {
         }
         if let Some(v) = monthly {
             entry.manifest.resources.max_cost_per_month_usd = v;
+        }
+        if let Some(v) = tokens_per_hour {
+            entry.manifest.resources.max_llm_tokens_per_hour = v;
         }
         entry.last_active = chrono::Utc::now();
         Ok(())

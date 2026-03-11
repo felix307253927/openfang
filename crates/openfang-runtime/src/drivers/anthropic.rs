@@ -27,7 +27,10 @@ impl AnthropicDriver {
         Self {
             api_key: Zeroizing::new(api_key),
             base_url,
-            client: reqwest::Client::new(),
+            client: reqwest::Client::builder()
+                .user_agent(crate::USER_AGENT)
+                .build()
+                .unwrap_or_default(),
         }
     }
 }
@@ -520,6 +523,7 @@ impl LlmDriver for AnthropicDriver {
                             id: id.clone(),
                             name: name.clone(),
                             input: input.clone(),
+                            provider_metadata: None,
                         });
                         tool_calls.push(ToolCall { id, name, input });
                     }
@@ -569,7 +573,7 @@ fn convert_message(msg: &Message) -> ApiMessage {
                             data: data.clone(),
                         },
                     }),
-                    ContentBlock::ToolUse { id, name, input } => Some(ApiContentBlock::ToolUse {
+                    ContentBlock::ToolUse { id, name, input, .. } => Some(ApiContentBlock::ToolUse {
                         id: id.clone(),
                         name: name.clone(),
                         input: input.clone(),
@@ -613,6 +617,7 @@ fn convert_response(api: ApiResponse) -> CompletionResponse {
                     id: id.clone(),
                     name: name.clone(),
                     input: input.clone(),
+                    provider_metadata: None,
                 });
                 tool_calls.push(ToolCall { id, name, input });
             }

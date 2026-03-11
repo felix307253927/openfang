@@ -153,6 +153,10 @@ pub struct OpenFangKernel {
     /// Hot-reloadable default model override (set via config hot-reload, read at agent spawn).
     pub default_model_override:
         std::sync::RwLock<Option<openfang_types::config::DefaultModelConfig>>,
+    /// Per-agent message locks — serializes LLM calls for the same agent to prevent
+    /// session corruption when multiple messages arrive concurrently (e.g. rapid voice
+    /// messages via Telegram). Different agents can still run in parallel.
+    agent_msg_locks: dashmap::DashMap<AgentId, Arc<tokio::sync::Mutex<()>>>,
     /// Weak self-reference for trigger dispatch (set after Arc wrapping).
     self_handle: OnceLock<Weak<OpenFangKernel>>,
 }
@@ -803,7 +807,15 @@ impl OpenFangKernel {
             use openfang_runtime::embedding::create_embedding_driver;
             let configured_model = &config.memory.embedding_model;
             if let Some(ref provider) = config.memory.embedding_provider {
-                // Explicit config takes priority — use the configured embedding model
+                // Explicit config takes priority — use the configured embedding model.
+                // If the user left embedding_model at the default ("all-MiniLM-L6-v2"),
+                // pick a sensible default for the chosen provider so we don't send a
+                // local model name to a cloud API.
+                let model = if configured_model == "all-MiniLM-L6-v2" {
+                    default_embedding_model_for_provider(provider)
+                } else {
+                    configured_model.as_str()
+                };
                 let api_key_env = config.memory.embedding_api_key_env.as_deref().unwrap_or("");
                 let custom_url = config
                     .provider_urls
@@ -811,7 +823,7 @@ impl OpenFangKernel {
                     .map(|s| s.as_str());
                 match create_embedding_driver(provider, configured_model, api_key_env, custom_url) {
                     Ok(d) => {
-                        info!(provider = %provider, model = %configured_model, "Embedding driver configured from memory config");
+                        info!(provider = %provider, model = %model, "Embedding driver configured from memory config");
                         Some(Arc::from(d))
                     }
                     Err(e) => {
@@ -821,14 +833,14 @@ impl OpenFangKernel {
                 }
             } else if std::env::var("OPENAI_API_KEY").is_ok() {
                 let model = if configured_model == "all-MiniLM-L6-v2" {
-                    "text-embedding-3-small"
+                    default_embedding_model_for_provider("openai")
                 } else {
                     configured_model.as_str()
                 };
                 let openai_url = config.provider_urls.get("openai").map(|s| s.as_str());
                 match create_embedding_driver("openai", model, "OPENAI_API_KEY", openai_url) {
                     Ok(d) => {
-                        info!("Embedding driver auto-detected: OpenAI");
+                        info!(model = %model, "Embedding driver auto-detected: OpenAI");
                         Some(Arc::from(d))
                     }
                     Err(e) => {
@@ -839,14 +851,14 @@ impl OpenFangKernel {
             } else {
                 // Try Ollama (local, no key needed)
                 let model = if configured_model == "all-MiniLM-L6-v2" {
-                    "nomic-embed-text"
+                    default_embedding_model_for_provider("ollama")
                 } else {
                     configured_model.as_str()
                 };
                 let ollama_url = config.provider_urls.get("ollama").map(|s| s.as_str());
                 match create_embedding_driver("ollama", model, "", ollama_url) {
                     Ok(d) => {
-                        info!("Embedding driver auto-detected: Ollama (local)");
+                        info!(model = %model, "Embedding driver auto-detected: Ollama (local)");
                         Some(Arc::from(d))
                     }
                     Err(e) => {
@@ -988,6 +1000,7 @@ impl OpenFangKernel {
             whatsapp_gateway_pid: Arc::new(std::sync::Mutex::new(None)),
             channel_adapters: dashmap::DashMap::new(),
             default_model_override: std::sync::RwLock::new(None),
+            agent_msg_locks: dashmap::DashMap::new(),
             self_handle: OnceLock::new(),
         };
 
@@ -1415,6 +1428,10 @@ impl OpenFangKernel {
     /// When `content_blocks` is `Some`, the LLM agent loop receives structured
     /// multimodal content (text + images) instead of just a text string. This
     /// enables vision models to process images sent from channels like Telegram.
+    ///
+    /// Per-agent locking ensures that concurrent messages for the same agent
+    /// are serialized (preventing session corruption), while messages for
+    /// different agents run in parallel.
     pub async fn send_message_with_handle_and_blocks(
         &self,
         agent_id: AgentId,
@@ -1422,6 +1439,17 @@ impl OpenFangKernel {
         kernel_handle: Option<Arc<dyn KernelHandle>>,
         content_blocks: Option<Vec<openfang_types::message::ContentBlock>>,
     ) -> KernelResult<AgentLoopResult> {
+        // Acquire per-agent lock to serialize concurrent messages for the same agent.
+        // This prevents session corruption when multiple messages arrive in quick
+        // succession (e.g. rapid voice messages via Telegram). Messages for different
+        // agents are not blocked — each agent has its own independent lock.
+        let lock = self
+            .agent_msg_locks
+            .entry(agent_id)
+            .or_insert_with(|| Arc::new(tokio::sync::Mutex::new(())))
+            .clone();
+        let _guard = lock.lock().await;
+
         // Enforce quota before running the agent loop
         self.scheduler
             .check_quota(agent_id)
@@ -2941,6 +2969,14 @@ impl OpenFangKernel {
         self.event_bus.unsubscribe_agent(agent_id);
         self.triggers.remove_agent_triggers(agent_id);
 
+        // Remove cron jobs so they don't linger as orphans (#504)
+        let cron_removed = self.cron_scheduler.remove_agent_jobs(agent_id);
+        if cron_removed > 0 {
+            if let Err(e) = self.cron_scheduler.persist() {
+                warn!("Failed to persist cron jobs after agent deletion: {e}");
+            }
+        }
+
         // Remove from persistent storage
         let _ = self.memory.remove_agent(agent_id);
 
@@ -4037,6 +4073,28 @@ impl OpenFangKernel {
     /// without requiring a daemon restart. Uses the hot-reloaded default model
     /// override when available.
     /// If fallback models are configured, wraps the primary in a `FallbackDriver`.
+    /// Look up a provider's base URL, checking runtime catalog first, then boot-time config.
+    ///
+    /// Custom providers added at runtime via the dashboard (`set_provider_url`) are
+    /// stored in the model catalog but NOT in `self.config.provider_urls` (which is
+    /// the boot-time snapshot). This helper checks both sources so that custom
+    /// providers work immediately without a daemon restart.
+    fn lookup_provider_url(&self, provider: &str) -> Option<String> {
+        // 1. Boot-time config (from config.toml [provider_urls])
+        if let Some(url) = self.config.provider_urls.get(provider) {
+            return Some(url.clone());
+        }
+        // 2. Model catalog (updated at runtime by set_provider_url / apply_url_overrides)
+        if let Ok(catalog) = self.model_catalog.read() {
+            if let Some(p) = catalog.get_provider(provider) {
+                if !p.base_url.is_empty() {
+                    return Some(p.base_url.clone());
+                }
+            }
+        }
+        None
+    }
+
     fn resolve_driver(&self, manifest: &AgentManifest) -> KernelResult<Arc<dyn LlmDriver>> {
         let agent_provider = &manifest.model.provider;
 
@@ -4085,7 +4143,10 @@ impl OpenFangKernel {
                 std::env::var(&env_var).ok()
             };
 
-            // Don't inherit default provider's base_url when switching providers
+            // Don't inherit default provider's base_url when switching providers.
+            // Uses lookup_provider_url() which checks both boot-time config AND the
+            // runtime model catalog, so custom providers added via the dashboard
+            // (which only update the catalog, not self.config) are found (#494).
             let base_url = if has_custom_url {
                 manifest.model.base_url.clone()
             } else if agent_provider == default_provider {
@@ -4153,7 +4214,7 @@ impl OpenFangKernel {
                     base_url: fb
                         .base_url
                         .clone()
-                        .or_else(|| self.config.provider_urls.get(&fb.provider).cloned()),
+                        .or_else(|| self.lookup_provider_url(&fb.provider)),
                 };
                 match drivers::create_driver(&config) {
                     Ok(d) => chain.push((d, fb.model.clone())),
@@ -4907,6 +4968,27 @@ fn apply_budget_defaults(
     }
     if budget.max_monthly_usd > 0.0 && resources.max_cost_per_month_usd == 0.0 {
         resources.max_cost_per_month_usd = budget.max_monthly_usd;
+    }
+    // Override per-agent hourly token limit when the global default is set.
+    // This lets users raise (or lower) the token budget for all agents at once
+    // via config.toml [budget] default_max_llm_tokens_per_hour = 10000000
+    if budget.default_max_llm_tokens_per_hour > 0 {
+        resources.max_llm_tokens_per_hour = budget.default_max_llm_tokens_per_hour;
+    }
+}
+
+/// Pick a sensible default embedding model for a given provider when the user
+/// configured an explicit `embedding_provider` but left `embedding_model` at the
+/// default value (which is a local model name that cloud APIs wouldn't recognise).
+fn default_embedding_model_for_provider(provider: &str) -> &'static str {
+    match provider {
+        "openai" => "text-embedding-3-small",
+        "mistral" => "mistral-embed",
+        "cohere" => "embed-english-v3.0",
+        // Local providers use nomic-embed-text as a good default
+        "ollama" | "vllm" | "lmstudio" => "nomic-embed-text",
+        // Other OpenAI-compatible APIs typically support the OpenAI model names
+        _ => "text-embedding-3-small",
     }
 }
 

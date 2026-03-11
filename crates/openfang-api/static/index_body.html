@@ -736,7 +736,7 @@
                   <span class="text-xs" style="color:var(--danger)" x-text="formatRecordingTime()"></span>
                 </div>
                 <textarea id="msg-input" rows="1" :placeholder="recording ? 'Recording... release to send' : 'Message OpenFang... (/ for commands)'"
-                          @keydown.enter.prevent="if(!$event.isComposing && !$event.shiftKey){if(showModelPicker && filteredModelPicker.length){pickModel(filteredModelPicker[modelPickerIdx].id)}else if(showSlashMenu && filteredSlashCommands.length){executeSlashCommand(filteredSlashCommands[slashIdx].cmd)}else{sendMessage()}}"
+                          @keydown.enter.prevent="if(!$event.isComposing && $event.keyCode !== 229 && !$event.shiftKey){if(showModelPicker && filteredModelPicker.length){pickModel(filteredModelPicker[modelPickerIdx].id)}else if(showSlashMenu && filteredSlashCommands.length){executeSlashCommand(filteredSlashCommands[slashIdx].cmd)}else{sendMessage()}}"
                           @keydown.escape="showSlashMenu = false; showModelPicker = false"
                           @keydown.arrow-up.prevent="if(showModelPicker){modelPickerIdx = Math.max(0, modelPickerIdx - 1)}else if(showSlashMenu){slashIdx = Math.max(0, slashIdx - 1)}"
                           @keydown.arrow-down.prevent="if(showModelPicker){modelPickerIdx = Math.min(filteredModelPicker.length - 1, modelPickerIdx + 1)}else if(showSlashMenu){slashIdx = Math.min(filteredSlashCommands.length - 1, slashIdx + 1)}"
@@ -769,7 +769,7 @@
                     <div class="model-switcher-dropdown" x-show="showModelSwitcher" x-transition:enter="transition ease-out duration-150" x-transition:enter-start="opacity-0 transform translate-y-1" x-transition:enter-end="opacity-100 transform translate-y-0" x-transition:leave="transition ease-in duration-100" x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0">
                       <div class="model-switcher-search">
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="flex-shrink:0;opacity:0.5"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-                        <input id="model-switcher-search" type="text" x-model="modelSwitcherFilter" placeholder="Search models..." @keydown.escape.stop="showModelSwitcher = false" @keydown.arrow-down.prevent="modelSwitcherIdx = Math.min(modelSwitcherIdx + 1, filteredSwitcherModels.length - 1)" @keydown.arrow-up.prevent="modelSwitcherIdx = Math.max(modelSwitcherIdx - 1, 0)" @keydown.enter.prevent="filteredSwitcherModels[modelSwitcherIdx] && switchModel(filteredSwitcherModels[modelSwitcherIdx])">
+                        <input id="model-switcher-search" type="text" x-model="modelSwitcherFilter" placeholder="Search models..." @keydown.escape.stop="showModelSwitcher = false" @keydown.arrow-down.prevent="modelSwitcherIdx = Math.min(modelSwitcherIdx + 1, filteredSwitcherModels.length - 1)" @keydown.arrow-up.prevent="modelSwitcherIdx = Math.max(modelSwitcherIdx - 1, 0)" @keydown.enter.prevent="!$event.isComposing && $event.keyCode !== 229 && filteredSwitcherModels[modelSwitcherIdx] && switchModel(filteredSwitcherModels[modelSwitcherIdx])">
                         <select x-model="modelSwitcherProviderFilter" style="background:var(--surface2);border:1px solid var(--border);border-radius:6px;color:var(--text-dim);font-size:11px;padding:2px 6px;cursor:pointer;font-family:var(--font-mono);flex-shrink:0">
                           <option value="">All</option>
                           <template x-for="pn in switcherProviders" :key="pn">
@@ -1091,7 +1091,7 @@
                   <div x-show="spawnStep === 1">
                     <div class="form-group">
                       <label>Agent Name</label>
-                      <input class="form-input" x-model="spawnForm.name" placeholder="my-agent" @keydown.enter="nextStep()">
+                      <input class="form-input" x-model="spawnForm.name" placeholder="my-agent" @keydown.enter="if(!$event.isComposing && $event.keyCode !== 229) nextStep()">
                     </div>
                     <div class="form-group">
                       <label>Emoji</label>
@@ -2172,7 +2172,7 @@
             <!-- Search bar with live search and clear button -->
             <div class="search-input mb-4" style="position:relative">
               <span style="color:var(--text-muted)"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg></span>
-              <input placeholder="Search ClawHub skills... (type to search)" x-model="clawhubSearch" @input="onSearchInput()" @keydown.enter="searchClawHub()" @keydown.escape="clearSearch()" x-ref="clawhubSearchInput">
+              <input placeholder="Search ClawHub skills... (type to search)" x-model="clawhubSearch" @input="onSearchInput()" @keydown.enter="if(!$event.isComposing && $event.keyCode !== 229) searchClawHub()" @keydown.escape="clearSearch()" x-ref="clawhubSearchInput">
               <button x-show="clawhubSearch" @click="clearSearch()" class="search-clear-btn" title="Clear search (Esc)">&times;</button>
             </div>
 
@@ -3458,7 +3458,7 @@ args = ["-y", "@modelcontextprotocol/server-filesystem", "/path"]</pre>
           <div x-show="tab === 'budget'" x-data="{
             budgetData: null, agentRanking: [], budgetLoading: true,
             editMode: false,
-            editHourly: '', editDaily: '', editMonthly: '', editAlert: '',
+            editHourly: '', editDaily: '', editMonthly: '', editAlert: '', editTokenLimit: '',
             saving: false,
             async loadBudget() {
               this.budgetLoading = true;
@@ -3477,6 +3477,7 @@ args = ["-y", "@modelcontextprotocol/server-filesystem", "/path"]</pre>
               this.editDaily = this.budgetData.daily_limit || 0;
               this.editMonthly = this.budgetData.monthly_limit || 0;
               this.editAlert = ((this.budgetData.alert_threshold || 0.8) * 100).toFixed(0);
+              this.editTokenLimit = this.budgetData.default_max_llm_tokens_per_hour || 0;
               this.editMode = true;
             },
             async saveBudget() {
@@ -3488,12 +3489,14 @@ args = ["-y", "@modelcontextprotocol/server-filesystem", "/path"]</pre>
                 if (+this.editMonthly !== this.budgetData.monthly_limit) body.max_monthly_usd = +this.editMonthly;
                 let alertVal = (+this.editAlert) / 100;
                 if (Math.abs(alertVal - this.budgetData.alert_threshold) > 0.001) body.alert_threshold = alertVal;
+                if (+this.editTokenLimit !== (this.budgetData.default_max_llm_tokens_per_hour || 0)) body.default_max_llm_tokens_per_hour = +this.editTokenLimit;
                 await OpenFangAPI.put('/api/budget', body);
                 this.editMode = false;
                 await this.loadBudget();
               } catch(e) { OpenFangToast.error('Failed to save: ' + (e.message || e)); }
               this.saving = false;
             },
+            fmtTokens(v) { return v > 0 ? (v >= 1000000 ? (v/1000000).toFixed(1)+'M' : v >= 1000 ? (v/1000).toFixed(0)+'K' : v) : 'per-agent'; },
             pctColor(pct) { return pct >= 0.8 ? '#ef4444' : pct >= 0.5 ? '#eab308' : '#22c55e'; },
             fmtUsd(v) { return v > 0 ? '$' + v.toFixed(4) : 'unlimited'; }
           }" x-init="loadBudget()">
@@ -3533,8 +3536,11 @@ args = ["-y", "@modelcontextprotocol/server-filesystem", "/path"]</pre>
                   </div>
                 </div>
               </div>
-              <div class="text-xs text-dim mb-3" x-show="budgetData.alert_threshold > 0 && !editMode">
+              <div class="text-xs text-dim mb-1" x-show="budgetData.alert_threshold > 0 && !editMode">
                 Alert threshold: <span x-text="(budgetData.alert_threshold * 100).toFixed(0) + '%'"></span> of any limit
+              </div>
+              <div class="text-xs text-dim mb-3" x-show="!editMode">
+                Hourly token limit (per agent): <span x-text="fmtTokens(budgetData.default_max_llm_tokens_per_hour || 0)"></span>
               </div>
 
               <!-- Edit limits form -->
@@ -3557,7 +3563,11 @@ args = ["-y", "@modelcontextprotocol/server-filesystem", "/path"]</pre>
                     <input type="number" step="5" min="0" max="100" x-model="editAlert" class="input" style="width:100%;margin-top:2px" placeholder="80">
                   </div>
                 </div>
-                <div class="text-xs text-dim">Set to 0 for unlimited. Changes apply immediately (in-memory, not persisted to config.toml).</div>
+                <div style="margin-bottom:8px">
+                  <label class="text-xs text-dim">Hourly Token Limit (per agent, 0 = use per-agent values)</label>
+                  <input type="number" step="100000" min="0" x-model="editTokenLimit" class="input" style="width:260px;margin-top:2px" placeholder="0 = per-agent default">
+                </div>
+                <div class="text-xs text-dim">Set to 0 for unlimited/per-agent default. Changes apply immediately (in-memory, not persisted to config.toml).</div>
                 <button class="btn btn-sm mt-2" @click="editMode = false" style="margin-right:8px">Cancel</button>
               </div>
 
@@ -3565,7 +3575,7 @@ args = ["-y", "@modelcontextprotocol/server-filesystem", "/path"]</pre>
               <h4 style="margin-top:16px;margin-bottom:8px">Top Spenders (Today)</h4>
               <div class="table-wrap" x-show="agentRanking.length">
                 <table>
-                  <thead><tr><th>Agent</th><th>Today</th><th>Hourly Limit</th><th>Daily Limit</th><th>Monthly Limit</th></tr></thead>
+                  <thead><tr><th>Agent</th><th>Today</th><th>Hourly Limit</th><th>Daily Limit</th><th>Monthly Limit</th><th>Token Limit/hr</th></tr></thead>
                   <tbody>
                     <template x-for="a in agentRanking" :key="a.agent_id">
                       <tr>
@@ -3574,6 +3584,7 @@ args = ["-y", "@modelcontextprotocol/server-filesystem", "/path"]</pre>
                         <td class="text-dim" x-text="fmtUsd(a.hourly_limit)"></td>
                         <td class="text-dim" x-text="fmtUsd(a.daily_limit)"></td>
                         <td class="text-dim" x-text="fmtUsd(a.monthly_limit)"></td>
+                        <td class="text-dim" x-text="fmtTokens(a.max_llm_tokens_per_hour || 0)"></td>
                       </tr>
                     </template>
                   </tbody>
@@ -4565,7 +4576,7 @@ args = ["-y", "@modelcontextprotocol/server-filesystem", "/path"]</pre>
               <div class="card" style="border-left:3px solid var(--accent)">
                 <div class="form-group" style="margin-bottom:8px">
                   <label>Agent Name</label>
-                  <input class="form-input" type="text" x-model="agentName" placeholder="my-assistant" style="max-width:320px" @keydown.enter="createAgent()">
+                  <input class="form-input" type="text" x-model="agentName" placeholder="my-assistant" style="max-width:320px" @keydown.enter="if(!$event.isComposing && $event.keyCode !== 229) createAgent()">
                 </div>
                 <div class="text-xs text-dim" x-text="'Will use ' + templates[selectedTemplate].provider + ' / ' + templates[selectedTemplate].model + ' with ' + profileInfo(templates[selectedTemplate].profile).label + ' profile'"></div>
                 <div class="mt-2">
@@ -4611,7 +4622,7 @@ args = ["-y", "@modelcontextprotocol/server-filesystem", "/path"]</pre>
               <!-- Input -->
               <div style="display:flex;gap:8px;margin-top:12px">
                 <input class="form-input" type="text" x-model="tryItInput" placeholder="Type a message..."
-                       @keydown.enter="sendTryItMessage(tryItInput)" :disabled="tryItSending" style="flex:1">
+                       @keydown.enter="if(!$event.isComposing && $event.keyCode !== 229) sendTryItMessage(tryItInput)" :disabled="tryItSending" style="flex:1">
                 <button class="btn btn-primary btn-sm" @click="sendTryItMessage(tryItInput)" :disabled="tryItSending || !tryItInput.trim()">Send</button>
               </div>
             </div>
