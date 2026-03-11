@@ -184,7 +184,7 @@ pub async fn build_router(
         )
         .route(
             "/api/agents/{id}/workspace",
-            axum::routing::put(agent::set_agent_workspace),
+            axum::routing::put(uni_agent::set_agent_workspace),
         )
         .route(
             "/api/agents/{id}/clone",
