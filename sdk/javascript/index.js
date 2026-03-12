@@ -282,15 +282,30 @@ class AgentResource {
     return this._c._request("PUT", "/api/agents/" + id + "/skills", skills);
   }
 
-  /** Upload a file to agent. */
-  async upload(id, file, filename) {
-    var url = this._c.baseUrl + "/api/agents/" + id + "/upload";
-    var form = new FormData();
-    form.append("file", file, filename);
-    var res = await fetch(url, { method: "POST", body: form });
-    if (!res.ok)
-      throw new OpenFangError("Upload failed: " + res.status, res.status);
-    return res.json();
+  // /** Upload a file to agent. */
+  // async upload(id, file, filename) {
+  //   var url = this._c.baseUrl + "/api/agents/" + id + "/upload";
+  //   var form = new FormData();
+  //   form.append("file", file, filename);
+  //   var res = await fetch(url, { method: "POST", body: form });
+  //   if (!res.ok)
+  //     throw new OpenFangError("Upload failed: " + res.status, res.status);
+  //   return res.json();
+  // }
+
+  async upload(agentId, file) {
+    var hdrs = {
+      "Content-Type": file.type || "application/octet-stream",
+      "X-Filename": file.name,
+    };
+    return fetch(this._c.baseUrl + "/api/agents/" + agentId + "/upload", {
+      method: "POST",
+      headers: hdrs,
+      body: file,
+    }).then(function (r) {
+      if (!r.ok) throw new Error("Upload failed");
+      return r.json();
+    });
   }
 
   /** Update agent identity. */
