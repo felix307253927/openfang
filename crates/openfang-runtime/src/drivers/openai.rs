@@ -270,7 +270,7 @@ impl LlmDriver for OpenAIDriver {
                                     reasoning_content: None,
                                 });
                             }
-                            ContentBlock::Text { text } => {
+                            ContentBlock::Text { text, .. } => {
                                 parts.push(OaiContentPart::Text { text: text.clone() });
                             }
                             ContentBlock::Image { media_type, data } => {
@@ -299,7 +299,7 @@ impl LlmDriver for OpenAIDriver {
                     let mut tool_calls = Vec::new();
                     for block in blocks {
                         match block {
-                            ContentBlock::Text { text } => text_parts.push(text.clone()),
+                            ContentBlock::Text { text, .. } => text_parts.push(text.clone()),
                             ContentBlock::ToolUse {
                                 id, name, input, ..
                             } => {
@@ -583,7 +583,10 @@ impl LlmDriver for OpenAIDriver {
                         }
                     }
                     if !cleaned.is_empty() {
-                        content.push(ContentBlock::Text { text: cleaned });
+                        content.push(ContentBlock::Text {
+                            text: cleaned,
+                            provider_metadata: None,
+                        });
                     }
                 }
             }
@@ -1209,7 +1212,10 @@ impl LlmDriver for OpenAIDriver {
                     }
                 }
                 if !cleaned.is_empty() {
-                    content.push(ContentBlock::Text { text: cleaned });
+                    content.push(ContentBlock::Text {
+                        text: cleaned,
+                        provider_metadata: None,
+                    });
                 }
             }
 
@@ -1462,6 +1468,7 @@ fn parse_groq_failed_tool_call(body: &str) -> Option<CompletionResponse> {
             return Some(CompletionResponse {
                 content: vec![ContentBlock::Text {
                     text: failed.to_string(),
+                    provider_metadata: None,
                 }],
                 tool_calls: vec![],
                 stop_reason: StopReason::EndTurn,

@@ -312,7 +312,10 @@ pub fn create_driver(config: &DriverConfig) -> Result<Arc<dyn LlmDriver>, LlmErr
     // Claude Code CLI — subprocess-based, no API key needed
     if provider == "claude-code" {
         let cli_path = config.base_url.clone();
-        return Ok(Arc::new(claude_code::ClaudeCodeDriver::new(cli_path)));
+        return Ok(Arc::new(claude_code::ClaudeCodeDriver::new(
+            cli_path,
+            config.skip_permissions,
+        )));
     }
 
     // GitHub Copilot — wraps OpenAI-compatible driver with automatic token exchange.
@@ -570,6 +573,7 @@ mod tests {
             provider: "my-custom-llm".to_string(),
             api_key: Some("test".to_string()),
             base_url: Some("http://localhost:9999/v1".to_string()),
+            skip_permissions: true,
         };
         let driver = create_driver(&config);
         assert!(driver.is_ok());
@@ -581,6 +585,7 @@ mod tests {
             provider: "nonexistent".to_string(),
             api_key: None,
             base_url: None,
+            skip_permissions: true,
         };
         let driver = create_driver(&config);
         assert!(driver.is_err());
@@ -681,6 +686,7 @@ mod tests {
             provider: "nvidia".to_string(),
             api_key: None, // not explicitly passed
             base_url: Some("https://integrate.api.nvidia.com/v1".to_string()),
+            skip_permissions: true,
         };
         let driver = create_driver(&config);
         assert!(
@@ -697,6 +703,7 @@ mod tests {
             provider: "nvidia".to_string(),
             api_key: None,
             base_url: None,
+            skip_permissions: true,
         };
         let driver = create_driver(&config);
         assert!(driver.is_err());
@@ -711,6 +718,7 @@ mod tests {
             provider: "nvidia".to_string(),
             api_key: None,
             base_url: None,
+            skip_permissions: true,
         };
         let result = create_driver(&config);
         assert!(result.is_err());
@@ -738,6 +746,7 @@ mod tests {
             provider: "my-custom-provider".to_string(),
             api_key: Some("explicit-key".to_string()),
             base_url: Some("https://api.example.com/v1".to_string()),
+            skip_permissions: true,
         };
         let driver = create_driver(&config);
         assert!(driver.is_ok());
