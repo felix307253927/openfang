@@ -1488,8 +1488,8 @@ async fn tool_shell_exec(
         #[cfg(windows)]
         let git_sh: Option<&str> = {
             const SH_PATHS: &[&str] = &[
-                "C:\\Program Files\\Git\\usr\\bin\\sh.exe",
-                "C:\\Program Files (x86)\\Git\\usr\\bin\\sh.exe",
+                // "C:\\Program Files\\Git\\usr\\bin\\sh.exe",
+                // "C:\\Program Files (x86)\\Git\\usr\\bin\\sh.exe",
             ];
             SH_PATHS
                 .iter()
@@ -2224,7 +2224,9 @@ async fn tool_channel_send(
         let caption = input["message"].as_str().filter(|s| !s.is_empty());
         let filename = input["filename"].as_str();
         return kh
-            .send_channel_media(&channel, recipient, "file", url, caption, filename, thread_id)
+            .send_channel_media(
+                &channel, recipient, "file", url, caption, filename, thread_id,
+            )
             .await;
     }
 
@@ -2279,9 +2281,7 @@ async fn tool_channel_send(
         };
 
         return kh
-            .send_channel_file_data(
-                &channel, recipient, data, &filename, mime_type, thread_id,
-            )
+            .send_channel_file_data(&channel, recipient, data, &filename, mime_type, thread_id)
             .await;
     }
 
@@ -3218,7 +3218,10 @@ async fn tool_canvas_present(
     let _ = tokio::fs::create_dir_all(&output_dir).await;
 
     let timestamp = chrono::Utc::now().format("%Y%m%d_%H%M%S");
-    let filename = format!("canvas_{timestamp}_{}.html", crate::str_utils::safe_truncate_str(&canvas_id, 8));
+    let filename = format!(
+        "canvas_{timestamp}_{}.html",
+        crate::str_utils::safe_truncate_str(&canvas_id, 8)
+    );
     let filepath = output_dir.join(&filename);
 
     // Write the full HTML document
