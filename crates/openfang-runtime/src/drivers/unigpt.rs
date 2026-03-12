@@ -3,7 +3,7 @@
  * @Email              : 307253927@qq.com
  * @Date               : 2026-03-09 13:50:06
  * @LastEditors        : Felix
- * @LastEditTime       : 2026-03-12 15:04:11
+ * @LastEditTime       : 2026-03-12 15:21:57
  */
 //! UniGPT-compatible API driver.
 //!
@@ -427,7 +427,10 @@ impl LlmDriver for UniGPTDriver {
                 .json(&uni_request);
 
             if !self.api_key.as_str().is_empty() {
-                req_builder = req_builder.header("DeskToken", self.api_key.to_string());
+                req_builder = req_builder.header(
+                    "DeskToken",
+                    std::env::var("UNIGPT_API_KEY").unwrap_or(self.api_key.to_string()),
+                );
             }
             for (k, v) in &self.extra_headers {
                 req_builder = req_builder.header(k, v);
@@ -879,7 +882,10 @@ impl LlmDriver for UniGPTDriver {
                 .json(&uni_request);
 
             if !self.api_key.as_str().is_empty() {
-                req_builder = req_builder.header("DeskToken", self.api_key.to_string());
+                req_builder = req_builder.header(
+                    "DeskToken",
+                    std::env::var("UNIGPT_API_KEY").unwrap_or(self.api_key.to_string()),
+                );
             }
             for (k, v) in &self.extra_headers {
                 req_builder = req_builder.header(k, v);
