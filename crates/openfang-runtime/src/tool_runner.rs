@@ -294,7 +294,7 @@ pub async fn execute_tool(
         "knowledge_query" => tool_knowledge_query(input, kernel).await,
 
         // Image analysis tool
-        "image_analyze" => tool_image_analyze(input).await,
+        "image_analyze" => tool_image_analyze(input, workspace_root).await,
 
         // Media understanding tools
         "media_describe" => tool_media_describe(input, media_engine).await,
@@ -1485,21 +1485,10 @@ async fn tool_shell_exec(
     } else {
         // UNSAFE PATH: Full mode — user explicitly opted in to shell interpretation.
         // Shell resolution: prefer sh (Git Bash/MSYS2) on Windows.
-        #[cfg(windows)]
-        let git_sh: Option<&str> = {
-            const SH_PATHS: &[&str] = &[
-                // "C:\\Program Files\\Git\\usr\\bin\\sh.exe",
-                // "C:\\Program Files (x86)\\Git\\usr\\bin\\sh.exe",
-            ];
-            SH_PATHS
-                .iter()
-                .copied()
-                .find(|p| std::path::Path::new(p).exists())
-        };
         let (shell, shell_arg) = if cfg!(windows) {
             #[cfg(windows)]
             {
-                if let Some(sh) = git_sh {
+                if let Some(sh) = get_git_sh_path().await {
                     (sh, "-c")
                 } else {
                     ("cmd", "/C")
@@ -1540,6 +1529,7 @@ async fn tool_shell_exec(
         Ok(Ok(output)) => {
             let stdout = String::from_utf8_lossy(&output.stdout);
             let stderr = String::from_utf8_lossy(&output.stderr);
+            tracing::debug!("Command output: stdout={stdout}, stderr={stderr}");
             let exit_code = output.status.code().unwrap_or(-1);
 
             // Truncate very long outputs to prevent memory issues
@@ -2474,13 +2464,19 @@ async fn tool_a2a_send(
 // Image analysis tool
 // ---------------------------------------------------------------------------
 
-async fn tool_image_analyze(input: &serde_json::Value) -> Result<String, String> {
+async fn tool_image_analyze(
+    input: &serde_json::Value,
+    workspace_root: Option<&Path>,
+) -> Result<String, String> {
     let path = input["path"].as_str().ok_or("Missing 'path' parameter")?;
     let prompt = input["prompt"].as_str().unwrap_or("");
 
-    let data = tokio::fs::read(path)
+    // Resolve relative path against workspace root if provided
+    let path = resolve_file_path(path, workspace_root)?;
+
+    let data = tokio::fs::read(&path)
         .await
-        .map_err(|e| format!("Failed to read image '{path}': {e}"))?;
+        .map_err(|e| format!("Failed to read image '{path:?}': {e}"))?;
 
     let file_size = data.len();
 
@@ -3242,6 +3238,49 @@ async fn tool_canvas_present(
     serde_json::to_string_pretty(&response).map_err(|e| format!("Serialize error: {e}"))
 }
 
+#[cfg(target_os = "windows")]
+async fn get_git_sh_path() -> Option<&'static str> {
+    use tokio::process::Command;
+
+    let output = Command::new("where.exe").arg("git").output().await.ok()?;
+
+    if !output.status.success() {
+        return None;
+    }
+
+    let stdout = String::from_utf8_lossy(&output.stdout);
+
+    for line in stdout.lines() {
+        let line = line.trim();
+        if line.is_empty() {
+            continue;
+        }
+
+        let path = std::path::PathBuf::from(line);
+
+        if let Some(parent) = path.parent() {
+            let parent_str = parent.to_string_lossy();
+
+            let sh_path = if parent_str.ends_with("cmd") {
+                let parent_dir = parent.parent()?;
+                parent_dir.join("usr").join("bin").join("sh.exe")
+            } else if parent_str.ends_with("mingw64") || parent_str.ends_with("mingw32") {
+                let parent_dir = parent.parent()?;
+                parent_dir.join("usr").join("bin").join("sh.exe")
+            } else {
+                continue;
+            };
+
+            if sh_path.exists() {
+                let sh_path_str = sh_path.to_string_lossy().replace('\\', "/");
+                return Some(Box::leak(sh_path_str.into_boxed_str()));
+            }
+        }
+    }
+
+    None
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -3966,5 +4005,21 @@ mod tests {
         assert_eq!(output["title"], "Test");
         // Cleanup
         let _ = std::fs::remove_dir_all(&tmp);
+    }
+
+    #[tokio::test]
+    async fn test_get_git_sh_path() {
+        let output = tokio::process::Command::new("where.exe")
+            .arg("git")
+            .output()
+            .await
+            .expect("Failed to execute where.exe");
+
+        let stdout = String::from_utf8_lossy(&output.stdout);
+
+        if stdout.contains("git") {
+            let path = get_git_sh_path().await.unwrap();
+            assert!(PathBuf::from(path).exists());
+        }
     }
 }
