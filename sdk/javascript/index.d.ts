@@ -97,6 +97,8 @@ export class SkillResource {
   install(skill: Record<string, unknown>): Promise<unknown>;
   uninstall(skill: Record<string, unknown>): Promise<unknown>;
   search(query: string): Promise<unknown[]>;
+  getClawHubBrowse(query: Record<string, unknown>): Promise<unknown[]>;
+  installClawHub(query: Record<string, unknown>): Promise<unknown>;
 }
 
 export class ChannelResource {
