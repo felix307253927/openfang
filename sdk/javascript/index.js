@@ -210,9 +210,10 @@ class AgentResource {
   }
 
   /** Set agent model. */
-  async setModel(id, model) {
+  async setModel(id, model, provider) {
     return this._c._request("PUT", "/api/agents/" + id + "/model", {
       model: model,
+      provider: provider,
     });
   }
 
