@@ -99,6 +99,7 @@ export class SkillResource {
   search(query: string): Promise<unknown[]>;
   getClawHubBrowse(query: Record<string, unknown>): Promise<unknown[]>;
   installClawHub(query: Record<string, unknown>): Promise<unknown>;
+  searchClawHub(query: Record<string, unknown>): Promise<unknown[]>;
 }
 
 export class ChannelResource {

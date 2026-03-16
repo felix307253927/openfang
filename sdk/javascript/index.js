@@ -462,11 +462,15 @@ class SkillResource {
   async getClawHubBrowse(query) {
     return this._c._request(
       "GET",
-      "/api/clawhub/browse?" +
-        (query.sort ? `sort=${query.sort}` : "") +
-        (query.q ? `q=${query.q}` : "") +
-        "&limit=" +
-        query.limit
+      "/api/clawhub/browse?sort=" + query.sort + "&limit=" + query.limit
+    );
+  }
+
+  /**search ClawHub */
+  async searchClawHub(query) {
+    return this._c._request(
+      "GET",
+      "/api/clawhub/search?q=" + query.q + "&limit=" + query.limit
     );
   }
 
