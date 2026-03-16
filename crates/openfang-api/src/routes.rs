@@ -8554,7 +8554,7 @@ pub async fn run_schedule(
     let kernel_handle: Arc<dyn KernelHandle> = state.kernel.clone() as Arc<dyn KernelHandle>;
     match state
         .kernel
-        .send_message_with_handle(target_agent, &run_message, Some(kernel_handle))
+        .send_message_with_handle(target_agent, &run_message, Some(kernel_handle), None, None)
         .await
     {
         Ok(result) => (

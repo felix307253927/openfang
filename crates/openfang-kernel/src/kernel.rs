@@ -1840,6 +1840,8 @@ impl OpenFangKernel {
                         .format("%A, %B %d, %Y (%Y-%m-%d %H:%M %Z)")
                         .to_string(),
                 ),
+                sender_id,
+                sender_name,
             };
             manifest.model.system_prompt =
                 openfang_runtime::prompt_builder::build_system_prompt(&prompt_ctx);
@@ -2387,6 +2389,8 @@ impl OpenFangKernel {
                         .format("%A, %B %d, %Y (%Y-%m-%d %H:%M %Z)")
                         .to_string(),
                 ),
+                sender_id,
+                sender_name,
             };
             manifest.model.system_prompt =
                 openfang_runtime::prompt_builder::build_system_prompt(&prompt_ctx);

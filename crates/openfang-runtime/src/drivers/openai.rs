@@ -397,10 +397,12 @@ impl LlmDriver for OpenAIDriver {
                             Some(tool_calls)
                         },
                         tool_call_id: None,
-                        reasoning_content: if has_tool_calls
-                            && self.kimi_needs_reasoning_content(&request.model)
-                        {
-                            Some(String::new())
+                        reasoning_content: if needs_reasoning {
+                            Some(if reasoning_text.is_empty() {
+                                String::new()
+                            } else {
+                                reasoning_text
+                            })
                         } else {
                             None
                         },
@@ -851,10 +853,12 @@ impl LlmDriver for OpenAIDriver {
                             Some(tool_calls_out)
                         },
                         tool_call_id: None,
-                        reasoning_content: if has_tool_calls
-                            && self.kimi_needs_reasoning_content(&request.model)
-                        {
-                            Some(String::new())
+                        reasoning_content: if needs_reasoning {
+                            Some(if reasoning_text.is_empty() {
+                                String::new()
+                            } else {
+                                reasoning_text
+                            })
                         } else {
                             None
                         },
@@ -915,10 +919,7 @@ impl LlmDriver for OpenAIDriver {
                 None
             },
         };
-        tracing::debug!(
-            "OpenAI request: {:?}",
-            serde_json::to_string(&oai_request).unwrap_or_default()
-        );
+
         // Retry loop for the initial HTTP request
         let max_retries = 3;
         for attempt in 0..=max_retries {
