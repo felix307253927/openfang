@@ -919,7 +919,10 @@ impl LlmDriver for OpenAIDriver {
                 None
             },
         };
-
+        crate::log_request::log_message(&format!(
+            "\n\n\nOpenAI request: {:?}",
+            serde_json::to_string(&oai_request).unwrap_or_default()
+        ));
         // Retry loop for the initial HTTP request
         let max_retries = 3;
         for attempt in 0..=max_retries {
@@ -1086,7 +1089,7 @@ impl LlmDriver for OpenAIDriver {
                     if line.is_empty() || line.starts_with(':') {
                         continue;
                     }
-
+                    crate::log_request::log_message(&format!("OpenAI stream chunk: {}", line));
                     sse_line_count += 1;
                     let data = match line.strip_prefix("data:") {
                         Some(d) => d.trim_start(),
