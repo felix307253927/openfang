@@ -3576,7 +3576,8 @@ pub async fn clawhub_search(
     match client.search(&query, limit).await {
         Ok(results) => {
             let items: Vec<serde_json::Value> = results
-                .results
+                .data
+                .skills
                 .iter()
                 .map(|e| {
                     let installed = skills_dir.join(&e.slug).exists();
@@ -3626,23 +3627,15 @@ pub async fn clawhub_browse(
     State(state): State<Arc<AppState>>,
     Query(params): Query<HashMap<String, String>>,
 ) -> impl IntoResponse {
-    let sort = match params.get("sort").map(|s| s.as_str()) {
-        Some("downloads") => openfang_skills::clawhub::ClawHubSort::Downloads,
-        Some("stars") => openfang_skills::clawhub::ClawHubSort::Stars,
-        Some("updated") => openfang_skills::clawhub::ClawHubSort::Updated,
-        Some("rating") => openfang_skills::clawhub::ClawHubSort::Rating,
-        _ => openfang_skills::clawhub::ClawHubSort::Trending,
-    };
-
-    let limit: u32 = params
-        .get("limit")
-        .and_then(|v| v.parse().ok())
-        .unwrap_or(20);
-
+    let category = params.get("category").map(|s| s.as_str()).unwrap_or("");
+    let page_size: u32 = params.get("pageSize").and_then(|v| v.parse().ok()).unwrap_or(24);
+    let sort_by = params.get("sortBy").map(|s| s.as_str()).unwrap_or("trending");
+    let order = params.get("order").map(|s| s.as_str()).unwrap_or("desc");
     let cursor = params.get("cursor").map(|s| s.as_str());
+    let page: u32 = params.get("page").and_then(|v| v.parse().ok()).unwrap_or(1);
 
     // Check cache (120s TTL)
-    let cache_key = format!("browse:{:?}:{}:{}", sort, limit, cursor.unwrap_or(""));
+    let cache_key = format!("browse:{}:{}:{}:{}", category, page_size, sort_by, order);
     if let Some(entry) = state.clawhub_cache.get(&cache_key) {
         if entry.0.elapsed().as_secs() < 120 {
             return (StatusCode::OK, Json(entry.1.clone()));
@@ -3653,10 +3646,11 @@ pub async fn clawhub_browse(
     let client = openfang_skills::clawhub::ClawHubClient::new(cache_dir);
 
     let skills_dir = state.kernel.config.home_dir.join("skills");
-    match client.browse(sort, limit, cursor).await {
+    match client.browse(category, page_size, sort_by, order, cursor,page).await {
         Ok(results) => {
-            let items: Vec<serde_json::Value> = results
-                .items
+            let skills: Vec<serde_json::Value> = results
+                .data
+                .skills
                 .iter()
                 .map(|entry| {
                     let mut json = clawhub_browse_entry_to_json(entry);
@@ -3666,7 +3660,10 @@ pub async fn clawhub_browse(
                 })
                 .collect();
             let resp = serde_json::json!({
-                "items": items,
+                "data": {
+                    "skills": skills,
+                    "total": results.data.total,
+                },
                 "next_cursor": results.next_cursor,
             });
             state
@@ -3684,7 +3681,7 @@ pub async fn clawhub_browse(
             };
             (
                 status,
-                Json(serde_json::json!({"items": [], "next_cursor": null, "error": msg})),
+                Json(serde_json::json!({"data": {"skills": [], "total": 0}, "next_cursor": null, "error": msg})),
             )
         }
     }
@@ -3871,19 +3868,20 @@ fn is_clawhub_rate_limit(err: &openfang_skills::SkillError) -> bool {
     matches!(err, openfang_skills::SkillError::RateLimited(_))
 }
 
-/// Convert a browse entry (nested stats/tags) to a flat JSON object for the frontend.
+/// Convert a browse entry to a flat JSON object for the frontend.
 fn clawhub_browse_entry_to_json(
     entry: &openfang_skills::clawhub::ClawHubBrowseEntry,
 ) -> serde_json::Value {
-    let version = openfang_skills::clawhub::ClawHubClient::entry_version(entry);
     serde_json::json!({
         "slug": entry.slug,
-        "name": entry.display_name,
-        "description": entry.summary,
-        "version": version,
-        "downloads": entry.stats.downloads,
-        "stars": entry.stats.stars,
+        "name": entry.name,
+        "description": entry.description,
+        "version": entry.version,
+        "downloads": entry.downloads,
+        "stars": entry.stars,
         "updated_at": entry.updated_at,
+        "category": entry.category,
+        "owner_name": entry.owner_name,
     })
 }
 
@@ -4840,6 +4838,267 @@ pub async fn list_mcp_servers(State(state): State<Arc<AppState>>) -> impl IntoRe
         "total_configured": config_servers.len(),
         "total_connected": connected.len(),
     }))
+}
+
+/// PUT /api/mcp/servers — Add or update a single MCP server configuration.
+pub async fn update_mcp_servers(
+    State(state): State<Arc<AppState>>,
+    Json(body): Json<serde_json::Value>,
+) -> impl IntoResponse {
+    // Deserialize the single MCP server config
+    let new_server: openfang_types::config::McpServerConfigEntry =
+        match serde_json::from_value(body.clone()) {
+            Ok(s) => s,
+            Err(e) => {
+                return (
+                    StatusCode::BAD_REQUEST,
+                    Json(serde_json::json!({"error": format!("Invalid MCP server configuration: {e}")})),
+                );
+            }
+        };
+
+    // Validate server name
+    if new_server.name.trim().is_empty() {
+        return (
+            StatusCode::BAD_REQUEST,
+            Json(serde_json::json!({"error": "MCP server name cannot be empty"})),
+        );
+    }
+
+    // Get existing servers from config
+    let mut existing_servers = state.kernel.config.mcp_servers.clone();
+
+    // Check if server with this name already exists
+    let existing_index = existing_servers
+        .iter()
+        .position(|s| s.name == new_server.name);
+
+    let is_update = existing_index.is_some();
+
+    if let Some(idx) = existing_index {
+        // Update existing server
+        existing_servers[idx] = new_server.clone();
+    } else {
+        // Add new server
+        existing_servers.push(new_server.clone());
+    }
+
+    // Update config.toml
+    let config_path = state.kernel.config.home_dir.join("config.toml");
+    if let Err(e) = update_mcp_servers_in_config(&config_path, &existing_servers) {
+        return (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            Json(serde_json::json!({"error": format!("Failed to update config: {e}")})),
+        );
+    }
+
+    // Update in-memory config
+    let config_ptr = &state.kernel.config as *const openfang_types::config::KernelConfig
+        as *mut openfang_types::config::KernelConfig;
+    unsafe {
+        (*config_ptr).mcp_servers = existing_servers.clone();
+    }
+
+    // Update effective_mcp_servers
+    if let Ok(mut effective) = state.kernel.effective_mcp_servers.write() {
+        *effective = existing_servers.clone();
+    }
+
+    // Connect the new/updated server in background
+    let kernel = state.kernel.clone();
+    let server_to_connect = new_server.clone();
+    tokio::spawn(async move {
+        // If updating, disconnect the old connection first
+        if is_update {
+            let mut connections = kernel.mcp_connections.lock().await;
+            connections.retain(|conn| conn.name() != server_to_connect.name);
+        }
+
+        // Connect the new/updated server
+        match openfang_runtime::mcp::McpConnection::connect(
+            openfang_runtime::mcp::McpServerConfig {
+                name: server_to_connect.name.clone(),
+                transport: match server_to_connect.transport {
+                    openfang_types::config::McpTransportEntry::Stdio { command, args } => {
+                        openfang_runtime::mcp::McpTransport::Stdio { command, args }
+                    }
+                    openfang_types::config::McpTransportEntry::Sse { url } => {
+                        openfang_runtime::mcp::McpTransport::Sse { url }
+                    }
+                },
+                timeout_secs: server_to_connect.timeout_secs,
+                env: server_to_connect.env.clone(),
+            },
+        )
+        .await
+        {
+            Ok(conn) => {
+                let mut connections = kernel.mcp_connections.lock().await;
+                connections.push(conn);
+                tracing::info!(
+                    server = %server_to_connect.name,
+                    "MCP server connected successfully"
+                );
+            }
+            Err(e) => {
+                tracing::warn!(
+                    server = %server_to_connect.name,
+                    error = %e,
+                    "Failed to connect MCP server after config update"
+                );
+            }
+        }
+    });
+
+    (
+        StatusCode::OK,
+        Json(serde_json::json!({
+            "status": "ok",
+            "message": if is_update { "MCP server updated successfully" } else { "MCP server added successfully" },
+            "name": new_server.name,
+            "action": if is_update { "updated" } else { "added" },
+        })),
+    )
+}
+
+/// DELETE /api/mcp/servers/{name} — Remove an MCP server configuration.
+pub async fn delete_mcp_server(
+    State(state): State<Arc<AppState>>,
+    axum::extract::Path(name): axum::extract::Path<String>,
+) -> impl IntoResponse {
+    // Get existing servers from config
+    let mut existing_servers = state.kernel.config.mcp_servers.clone();
+
+    // Find and remove the server
+    let original_len = existing_servers.len();
+    existing_servers.retain(|s| s.name != name);
+
+    if existing_servers.len() == original_len {
+        return (
+            StatusCode::NOT_FOUND,
+            Json(serde_json::json!({"error": format!("MCP server '{}' not found", name)})),
+        );
+    }
+
+    // Update config.toml
+    let config_path = state.kernel.config.home_dir.join("config.toml");
+    if let Err(e) = update_mcp_servers_in_config(&config_path, &existing_servers) {
+        return (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            Json(serde_json::json!({"error": format!("Failed to update config: {e}")})),
+        );
+    }
+
+    // Update in-memory config
+    let config_ptr = &state.kernel.config as *const openfang_types::config::KernelConfig
+        as *mut openfang_types::config::KernelConfig;
+    unsafe {
+        (*config_ptr).mcp_servers = existing_servers.clone();
+    }
+
+    // Update effective_mcp_servers
+    if let Ok(mut effective) = state.kernel.effective_mcp_servers.write() {
+        *effective = existing_servers;
+    }
+
+    // Disconnect the server in background
+    let kernel = state.kernel.clone();
+    let server_name = name.clone();
+    tokio::spawn(async move {
+        let mut connections = kernel.mcp_connections.lock().await;
+        connections.retain(|conn| conn.name() != server_name);
+        tracing::info!(
+            server = %server_name,
+            "MCP server disconnected and removed"
+        );
+    });
+
+    (
+        StatusCode::OK,
+        Json(serde_json::json!({
+            "status": "ok",
+            "message": "MCP server removed successfully",
+            "name": name,
+        })),
+    )
+}
+
+/// Helper function to update mcp_servers in config.toml.
+fn update_mcp_servers_in_config(
+    config_path: &std::path::Path,
+    servers: &[openfang_types::config::McpServerConfigEntry],
+) -> Result<(), String> {
+    // Read existing config
+    let contents = std::fs::read_to_string(config_path)
+        .unwrap_or_else(|_| String::new());
+
+    let mut doc: toml::Value = if contents.trim().is_empty() {
+        toml::Value::Table(toml::map::Map::new())
+    } else {
+        toml::from_str(&contents).map_err(|e| format!("Failed to parse config.toml: {e}"))?
+    };
+
+    let root = doc.as_table_mut().ok_or("Config is not a TOML table")?;
+
+    // Convert servers to TOML array
+    let servers_array: Vec<toml::Value> = servers
+        .iter()
+        .map(|s| {
+            let transport = match &s.transport {
+                openfang_types::config::McpTransportEntry::Stdio { command, args } => {
+                    let mut tbl = toml::map::Map::new();
+                    tbl.insert("type".to_string(), toml::Value::String("stdio".to_string()));
+                    tbl.insert("command".to_string(), toml::Value::String(command.clone()));
+                    tbl.insert(
+                        "args".to_string(),
+                        toml::Value::Array(
+                            args.iter()
+                                .map(|a| toml::Value::String(a.clone()))
+                                .collect(),
+                        ),
+                    );
+                    toml::Value::Table(tbl)
+                }
+                openfang_types::config::McpTransportEntry::Sse { url } => {
+                    let mut tbl = toml::map::Map::new();
+                    tbl.insert("type".to_string(), toml::Value::String("sse".to_string()));
+                    tbl.insert("url".to_string(), toml::Value::String(url.clone()));
+                    toml::Value::Table(tbl)
+                }
+            };
+
+            let mut server_tbl = toml::map::Map::new();
+            server_tbl.insert("name".to_string(), toml::Value::String(s.name.clone()));
+            server_tbl.insert("transport".to_string(), transport);
+            server_tbl.insert(
+                "timeout_secs".to_string(),
+                toml::Value::Integer(s.timeout_secs as i64),
+            );
+            if !s.env.is_empty() {
+                server_tbl.insert(
+                    "env".to_string(),
+                    toml::Value::Array(
+                        s.env.iter()
+                            .map(|e| toml::Value::String(e.clone()))
+                            .collect(),
+                    ),
+                );
+            }
+            toml::Value::Table(server_tbl)
+        })
+        .collect();
+
+    root.insert("mcp_servers".to_string(), toml::Value::Array(servers_array));
+
+    // Write back to file
+    if let Some(parent) = config_path.parent() {
+        std::fs::create_dir_all(parent).map_err(|e| format!("Failed to create config dir: {e}"))?;
+    }
+
+    std::fs::write(config_path, toml::to_string_pretty(&doc).map_err(|e| format!("Failed to serialize config: {e}"))?)
+        .map_err(|e| format!("Failed to write config.toml: {e}"))?;
+
+    Ok(())
 }
 
 // ---------------------------------------------------------------------------
