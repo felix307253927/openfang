@@ -1544,6 +1544,7 @@ async fn tool_shell_exec(
             c.arg("/C").arg("chcp 65001 >nul 2>&1").args(&argv);
             c
         };
+        tracing::debug!("Executing command: cmd {:?}", argv);
         #[cfg(not(windows))]
         let mut c = tokio::process::Command::new(&argv[0]);
         #[cfg(not(windows))]
@@ -1558,9 +1559,11 @@ async fn tool_shell_exec(
             #[cfg(windows)]
             {
                 if let Some(sh) = get_git_sh_path().await {
+                    tracing::debug!("Executing command: git sh: {:?}", input);
                     (sh, "-c")
                 } else {
-                    ("cmd", "/C chcp 65001 >nul 2>&1 &&")
+                    tracing::debug!("Executing command: full mode cmd {:?}", input);
+                    ("cmd", "/C chcp 65001 >nul 2>&1")
                 }
             }
             #[cfg(not(windows))]
