@@ -1527,7 +1527,26 @@ async fn tool_shell_exec(
         if argv.is_empty() {
             return Err("Empty command after parsing".to_string());
         }
+        // fix: UTF-8 encoding on Windows
+        #[cfg(windows)]
+        let c = if argv[0].eq_ignore_ascii_case("cmd") {
+            let mut c = tokio::process::Command::new(&argv[0]);
+            c.arg("/C");
+            c.arg("chcp 65001 >nul 2>&1");
+            if argv.len() > 2 && argv[1].eq_ignore_ascii_case("/c") {
+                c.args(&argv[2..]);
+            } else if argv.len() > 1 {
+                c.args(&argv[1..]);
+            }
+            c
+        } else {
+            let mut c = tokio::process::Command::new("cmd");
+            c.arg("/C").arg("chcp 65001 >nul 2>&1").args(&argv);
+            c
+        };
+        #[cfg(not(windows))]
         let mut c = tokio::process::Command::new(&argv[0]);
+        #[cfg(not(windows))]
         if argv.len() > 1 {
             c.args(&argv[1..]);
         }
@@ -1541,7 +1560,7 @@ async fn tool_shell_exec(
                 if let Some(sh) = get_git_sh_path().await {
                     (sh, "-c")
                 } else {
-                    ("cmd", "/C")
+                    ("cmd", "/C chcp 65001 >nul 2>&1 &&")
                 }
             }
             #[cfg(not(windows))]
@@ -1567,7 +1586,11 @@ async fn tool_shell_exec(
 
     // Ensure UTF-8 output on Windows
     #[cfg(windows)]
-    cmd.env("PYTHONIOENCODING", "utf-8");
+    {
+        const CREATE_NO_WINDOW: u32 = 0x08000000;
+        cmd.creation_flags(CREATE_NO_WINDOW);
+        cmd.env("PYTHONIOENCODING", "utf-8");
+    }
 
     // Prevent child from inheriting stdin (avoids blocking on Windows)
     cmd.stdin(std::process::Stdio::null());
@@ -3356,7 +3379,7 @@ pub fn skill_load(
     if let Some(registry) = skill_registry {
         if let Some(skill) = registry.get(skill_name) {
             if let Some(ref prompt_context) = skill.manifest.prompt_context {
-                return Ok(prompt_context.clone());
+                return Ok(format!("---Below is the Skill Instruction'{skill_name}':---\n{prompt_context}\n ---End of the Skill Instruction---"));
             }
         }
     }
