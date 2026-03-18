@@ -85,40 +85,65 @@ pub struct ClawHubOwner {
 // -- Browse: GET /api/v1/skills?limit=N&sort=trending ----------------------
 
 /// A skill entry from the browse endpoint (`GET /api/v1/skills`).
-///
-/// Tags is a string→string map (e.g. `{"latest": "1.0.0"}`), not a list.
-/// Timestamps are Unix milliseconds.
 #[derive(Debug, Clone, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase")]
+#[serde(rename_all = "snake_case")]
 pub struct ClawHubBrowseEntry {
     pub slug: String,
     #[serde(default)]
-    pub display_name: String,
+    pub name: String,
     #[serde(default)]
-    pub summary: String,
-    /// Version tags (e.g. `{"latest": "1.0.0"}`).
+    pub description: String,
     #[serde(default)]
-    pub tags: std::collections::HashMap<String, String>,
+    pub description_zh: String,
     #[serde(default)]
-    pub stats: ClawHubStats,
-    /// Unix ms timestamp.
+    pub version: String,
     #[serde(default)]
-    pub created_at: i64,
+    pub category: String,
+    #[serde(default)]
+    pub downloads: u64,
+    #[serde(default)]
+    pub installs: u64,
+    #[serde(default)]
+    pub stars: u64,
+    #[serde(default)]
+    pub score: f64,
+    #[serde(default)]
+    pub owner_name: String,
+    #[serde(default)]
+    pub homepage: String,
+    /// Tags is a list of strings, or null.
+    #[serde(default)]
+    pub tags: Option<Vec<String>>,
     /// Unix ms timestamp.
     #[serde(default)]
     pub updated_at: i64,
+}
+
+/// Data nested inside the browse response.
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub struct ClawHubBrowseData {
     #[serde(default)]
-    pub latest_version: Option<ClawHubVersionInfo>,
+    pub skills: Vec<ClawHubBrowseEntry>,
+    #[serde(default)]
+    pub total: u64,
 }
 
 /// Paginated response from the browse endpoint.
 #[derive(Debug, Clone, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase")]
+#[serde(rename_all = "snake_case")]
 pub struct ClawHubBrowseResponse {
-    pub items: Vec<ClawHubBrowseEntry>,
+    #[serde(default)]
+    pub code: i32,
+    #[serde(default)]
+    pub data: ClawHubBrowseData,
+    #[serde(default)]
+    pub message: String,
     #[serde(default)]
     pub next_cursor: Option<String>,
 }
+
+
 
 // -- Search: GET /api/v1/search?q=...&limit=N ------------------------------
 
@@ -142,11 +167,20 @@ pub struct ClawHubSearchEntry {
     pub updated_at: i64,
 }
 
-/// Response from the search endpoint. Uses `results`, **not** `items`.
+/// Data nested inside the search response.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ClawHubSearchData {
+    pub skills: Vec<ClawHubSearchEntry>,
+    #[serde(default)]
+    pub total: u64,
+}
+
+/// Response from the search endpoint.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct ClawHubSearchResponse {
-    pub results: Vec<ClawHubSearchEntry>,
+    pub data: ClawHubSearchData,
 }
 
 // -- Detail: GET /api/v1/skills/{slug} -------------------------------------
@@ -249,7 +283,7 @@ impl ClawHubClient {
     ///
     /// Uses the official ClawHub API at `https://clawhub.ai/api/v1`.
     pub fn new(cache_dir: PathBuf) -> Self {
-        Self::with_url("https://clawhub.ai/api/v1", cache_dir)
+        Self::with_url("https://lightmake.site/api", cache_dir)
     }
 
     /// Create a ClawHub client with a custom API URL.
@@ -403,6 +437,7 @@ impl ClawHubClient {
 
         let response = self.get_with_retry(&url, "ClawHub search").await?;
 
+
         let results: ClawHubSearchResponse = response
             .json()
             .await
@@ -411,32 +446,50 @@ impl ClawHubClient {
         Ok(results)
     }
 
-    /// Browse skills by sort order (trending, downloads, stars, etc.).
+    /// Browse skills by category, sort field and order.
     ///
-    /// Uses `GET /api/v1/skills?limit=...&sort=...`.
+    /// Uses `GET /api/v1/skills?pageSize=...&category=...&sortBy=...&order=...`.
     pub async fn browse(
         &self,
-        sort: ClawHubSort,
-        limit: u32,
+        category: &str,
+        page_size: u32,
+        sort_by: &str,
+        order: &str,
         cursor: Option<&str>,
+        page: u32,
     ) -> Result<ClawHubBrowseResponse, SkillError> {
         let mut url = format!(
-            "{}/skills?limit={}&sort={}",
+            "{}/skills?pageSize={}&page={}&category={}&sortBy=score&order=desc",
             self.base_url,
-            limit.min(50),
-            sort.as_str()
+            page_size,
+            page,
+            urlencoded(category),
+            // urlencoded(sort_by),
+            // urlencoded(order),
         );
 
         if let Some(c) = cursor {
             url.push_str(&format!("&cursor={}", urlencoded(c)));
         }
 
+
         let response = self.get_with_retry(&url, "ClawHub browse").await?;
 
-        let results: ClawHubBrowseResponse = response
-            .json()
+        let raw = response
+            .text()
             .await
+            .map_err(|e| SkillError::Network(format!("Failed to read ClawHub browse body: {e}")))?;
+
+
+        let results: ClawHubBrowseResponse = serde_json::from_str(&raw)
             .map_err(|e| SkillError::Network(format!("Failed to parse ClawHub browse: {e}")))?;
+
+        info!(
+            url = %url,
+            items = results.data.skills.len(),
+            next_cursor = ?results.next_cursor,
+            "ClawHub browse response"
+        );
 
         Ok(results)
     }
@@ -460,12 +513,7 @@ impl ClawHubClient {
 
     /// Helper: extract the version string from a browse entry.
     pub fn entry_version(entry: &ClawHubBrowseEntry) -> &str {
-        entry
-            .latest_version
-            .as_ref()
-            .map(|v| v.version.as_str())
-            .or_else(|| entry.tags.get("latest").map(|s| s.as_str()))
-            .unwrap_or("")
+        entry.version.as_str()
     }
 
     /// Fetch a specific file from a skill (e.g., SKILL.md, README).
@@ -785,21 +833,23 @@ mod tests {
 
     #[test]
     fn test_search_response_serde() {
-        // Search uses "results" not "items"
         let json = r#"{
-            "results": [{
-                "score": 3.5,
-                "slug": "test",
-                "displayName": "Test",
-                "summary": "A test",
-                "version": "0.1.0",
-                "updatedAt": 0
-            }]
+            "data": {
+                "skills": [{
+                    "score": 3.5,
+                    "slug": "test",
+                    "displayName": "Test",
+                    "summary": "A test",
+                    "version": "0.1.0",
+                    "updatedAt": 0
+                }],
+                "total": 1
+            }
         }"#;
 
         let resp: ClawHubSearchResponse = serde_json::from_str(json).unwrap();
-        assert_eq!(resp.results.len(), 1);
-        assert_eq!(resp.results[0].slug, "test");
+        assert_eq!(resp.data.skills.len(), 1);
+        assert_eq!(resp.data.skills[0].slug, "test");
     }
 
     #[test]
@@ -884,26 +934,26 @@ mod tests {
     #[test]
     fn test_clawhub_client_url() {
         let client = ClawHubClient::new(PathBuf::from("/tmp/cache"));
-        assert_eq!(client.base_url, "https://clawhub.ai/api/v1");
+        assert_eq!(client.base_url, "https://lightmake.site/api");
     }
 
     #[test]
     fn test_entry_version_helper() {
         let entry = ClawHubBrowseEntry {
             slug: "test".to_string(),
-            display_name: "Test".to_string(),
-            summary: String::new(),
-            tags: [("latest".to_string(), "2.0.0".to_string())]
-                .into_iter()
-                .collect(),
-            stats: ClawHubStats::default(),
-            created_at: 0,
+            name: "Test".to_string(),
+            description: String::new(),
+            description_zh: String::new(),
+            version: "2.0.0".to_string(),
+            category: String::new(),
+            downloads: 0,
+            installs: 0,
+            stars: 0,
+            score: 0.0,
+            owner_name: String::new(),
+            homepage: String::new(),
+            tags: None,
             updated_at: 0,
-            latest_version: Some(ClawHubVersionInfo {
-                version: "2.0.0".to_string(),
-                created_at: 0,
-                changelog: String::new(),
-            }),
         };
         assert_eq!(ClawHubClient::entry_version(&entry), "2.0.0");
     }

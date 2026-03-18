@@ -505,11 +505,20 @@ class SkillResource {
       "/api/marketplace/search?q=" + encodeURIComponent(query)
     );
   }
-
+  /** page: 1,
+      pageSize: 24,
+      sortBy: "score",
+      order: "desc",
+      category: "ai-intelligence" */
   async getClawHubBrowse(query) {
     return this._c._request(
       "GET",
-      "/api/clawhub/browse?sort=" + query.sort + "&limit=" + query.limit
+      "/api/clawhub/browse?category=" +
+        query.category +
+        "&pageSize=" +
+        query.pageSize +
+        "&page=" +
+        query.page
     );
   }
 
