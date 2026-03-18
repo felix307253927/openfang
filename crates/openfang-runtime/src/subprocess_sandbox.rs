@@ -38,7 +38,8 @@ pub const SAFE_ENV_VARS_WINDOWS: &[&str] = &[
 /// Variables that are not set in the current process environment are silently
 /// skipped (rather than being set to empty strings).
 pub fn sandbox_command(cmd: &mut tokio::process::Command, allowed_env_vars: &[String]) {
-    cmd.env_clear();
+    // TODO: 放开环境变量
+    // cmd.env_clear();
 
     // Re-add platform-independent safe vars.
     for var in SAFE_ENV_VARS {
