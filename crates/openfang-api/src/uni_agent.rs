@@ -1,6 +1,7 @@
 use crate::{
     routes::{self, AppState, PatchAgentConfigRequest},
     types::{SpawnRequest, SpawnResponse},
+    uni_util::is_in_home_dir,
 };
 use axum::{
     extract::{Path, State},
@@ -226,12 +227,26 @@ pub async fn kill_agent(
             );
         }
     };
+    let entry = match state.kernel.registry.get(agent_id) {
+        Some(e) => e,
+        None => {
+            return (
+                StatusCode::NOT_FOUND,
+                Json(serde_json::json!({"error": "Agent not found or already terminated"})),
+            )
+        }
+    };
 
     match state.kernel.kill_agent(agent_id) {
-        Ok(()) => (
-            StatusCode::OK,
-            Json(serde_json::json!({"status": "killed", "agent_id": id})),
-        ),
+        Ok(()) => {
+            if let Err(e) = remove_agent_workspace(entry.manifest.workspace.as_ref()) {
+                tracing::error!("Agent {} workspace removed: {}", agent_id, e);
+            }
+            (
+                StatusCode::OK,
+                Json(serde_json::json!({"status": "killed", "agent_id": id})),
+            )
+        }
         Err(e) => {
             tracing::warn!("kill_agent failed for {id}: {e}");
             (
@@ -1065,7 +1080,9 @@ pub async fn install_local_skill(
         if let Err(e) = std::fs::create_dir_all(&skill_dir) {
             return (
                 StatusCode::INTERNAL_SERVER_ERROR,
-                Json(serde_json::json!({"error": format!("Failed to create skill directory: {e}")})),
+                Json(
+                    serde_json::json!({"error": format!("Failed to create skill directory: {e}")}),
+                ),
             );
         }
         if let Err(e) = std::fs::write(skill_dir.join("SKILL.md"), &*body) {
@@ -1092,7 +1109,9 @@ pub async fn install_local_skill(
         if let Err(e) = std::fs::create_dir_all(&skills_dir) {
             return (
                 StatusCode::INTERNAL_SERVER_ERROR,
-                Json(serde_json::json!({"error": format!("Failed to create skills directory: {e}")})),
+                Json(
+                    serde_json::json!({"error": format!("Failed to create skills directory: {e}")}),
+                ),
             );
         }
 
@@ -1116,7 +1135,10 @@ pub async fn install_local_skill(
                     if path_str.starts_with("__MACOSX") || path_str.contains("/__MACOSX") {
                         continue;
                     }
-                    if enclosed_name.file_name().map_or(false, |n| n.to_string_lossy().starts_with("._")) {
+                    if enclosed_name
+                        .file_name()
+                        .map_or(false, |n| n.to_string_lossy().starts_with("._"))
+                    {
                         continue;
                     }
                     // Extract into skills_dir directly (not skill_dir)
@@ -1181,7 +1203,9 @@ pub async fn install_local_skill(
                 if let Err(e2) = std::fs::create_dir_all(&skill_dir) {
                     return (
                         StatusCode::INTERNAL_SERVER_ERROR,
-                        Json(serde_json::json!({"error": format!("Failed to create skill dir: {e2}")})),
+                        Json(
+                            serde_json::json!({"error": format!("Failed to create skill dir: {e2}")}),
+                        ),
                     );
                 }
                 if let Err(e2) = std::fs::write(skill_dir.join("skill.zip"), &*body) {
@@ -1198,7 +1222,9 @@ pub async fn install_local_skill(
         if let Err(e) = std::fs::create_dir_all(&skill_dir) {
             return (
                 StatusCode::INTERNAL_SERVER_ERROR,
-                Json(serde_json::json!({"error": format!("Failed to create skill directory: {e}")})),
+                Json(
+                    serde_json::json!({"error": format!("Failed to create skill directory: {e}")}),
+                ),
             );
         }
         if let Err(e) = std::fs::write(skill_dir.join("package.json"), &*body) {
@@ -1430,4 +1456,49 @@ fn which_check(name: &str) -> Option<std::path::PathBuf> {
         }
         _ => None,
     }
+}
+
+fn remove_agent_workspace<P: AsRef<std::path::Path>>(
+    agent_workspace: Option<P>,
+) -> Result<(), String> {
+    if let Some(workspace) = agent_workspace {
+        let workspace = workspace.as_ref();
+        tracing::info!("Agent_workspace workspace: {}", workspace.display());
+        if is_in_home_dir(workspace) {
+            tracing::debug!("Removing workspace: {}", workspace.display());
+            std::fs::remove_dir_all(&workspace)
+                .map_err(|e| format!("Failed to remove workspace: {e}"))?;
+        } else {
+            [
+                "data",
+                "logs",
+                "memory",
+                "output",
+                "sessions",
+                "skills",
+                "AGENT.json",
+                "AGENTS.md",
+                "BOOTSTRAP.md",
+                "IDENTITY.md",
+                "MEMORY.md",
+                "SOUL.md",
+                "TOOLS.md",
+                "USER.md",
+            ]
+            .iter()
+            .map(|f| workspace.join(f))
+            .for_each(|f| {
+                tracing::debug!("Removing file or directory: {}", f.display());
+                if f.is_file() {
+                    std::fs::remove_file(f)
+                        .unwrap_or_else(|e| tracing::warn!("Failed to remove file: {e}"));
+                } else if f.is_dir() {
+                    std::fs::remove_dir_all(f)
+                        .unwrap_or_else(|e| tracing::warn!("Failed to remove directory: {e}"));
+                }
+            });
+        }
+    }
+
+    Ok(())
 }
