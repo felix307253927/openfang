@@ -679,6 +679,10 @@ class ModelResource {
       token: token,
     });
   }
+
+  async getDefaultModel() {
+    return this._c._request("GET", "/api/default_model");
+  }
 }
 
 // ── Provider Resource ───────────────────────────────────────────

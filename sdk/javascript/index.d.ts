@@ -121,6 +121,7 @@ export class ModelResource {
   aliases(): Promise<unknown>;
   updateUnigptModels(models: Record<string, unknown>): Promise<unknown>;
   setToken(token: string): Promise<unknown>;
+  getDefaultModel(): Promise<unknown>;
 }
 
 export class ProviderResource {
