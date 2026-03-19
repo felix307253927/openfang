@@ -1522,7 +1522,7 @@ async fn tool_shell_exec(
     let use_direct_exec = exec_policy
         .map(|p| p.mode == openfang_types::config::ExecSecurityMode::Allowlist)
         .unwrap_or(true); // Default to safe mode
-
+    let mut used_git_sh = false;
     let mut cmd = if use_direct_exec {
         // SAFE PATH: Split command into argv using POSIX shell lexer rules,
         // then execute the binary directly — no shell interpreter involved.
@@ -1532,31 +1532,19 @@ async fn tool_shell_exec(
         if argv.is_empty() {
             return Err("Empty command after parsing".to_string());
         }
-        // fix: UTF-8 encoding on Windows
-        #[cfg(windows)]
-        let c = if argv[0].eq_ignore_ascii_case("cmd") {
+        tracing::debug!("Executing command: use_direct_exec {:?}", argv);
+        // fix: Command not found on Windows
+        if cfg!(windows) && !argv[0].eq_ignore_ascii_case("cmd") {
+            let mut c = tokio::process::Command::new("cmd");
+            c.arg("/C").args(&argv);
+            c
+        } else {
             let mut c = tokio::process::Command::new(&argv[0]);
-            c.arg("/C");
-            c.arg("chcp 65001 >nul 2>&1");
-            if argv.len() > 2 && argv[1].eq_ignore_ascii_case("/c") {
-                c.args(&argv[2..]);
-            } else if argv.len() > 1 {
+            if argv.len() > 1 {
                 c.args(&argv[1..]);
             }
             c
-        } else {
-            let mut c = tokio::process::Command::new("cmd");
-            c.arg("/C").arg("chcp 65001 >nul 2>&1").args(&argv);
-            c
-        };
-        tracing::debug!("Executing command: cmd {:?}", argv);
-        #[cfg(not(windows))]
-        let mut c = tokio::process::Command::new(&argv[0]);
-        #[cfg(not(windows))]
-        if argv.len() > 1 {
-            c.args(&argv[1..]);
         }
-        c
     } else {
         // UNSAFE PATH: Full mode — user explicitly opted in to shell interpretation.
         // Shell resolution: prefer sh (Git Bash/MSYS2) on Windows.
@@ -1564,11 +1552,12 @@ async fn tool_shell_exec(
             #[cfg(windows)]
             {
                 if let Some(sh) = get_git_sh_path().await {
+                    used_git_sh = true;
                     tracing::debug!("Executing command: git sh: {:?}", input);
                     (sh, "-c")
                 } else {
                     tracing::debug!("Executing command: full mode cmd {:?}", input);
-                    ("cmd", "/C chcp 65001 >nul 2>&1")
+                    ("cmd", "/C")
                 }
             }
             #[cfg(not(windows))]
@@ -1598,6 +1587,12 @@ async fn tool_shell_exec(
         const CREATE_NO_WINDOW: u32 = 0x08000000;
         cmd.creation_flags(CREATE_NO_WINDOW);
         cmd.env("PYTHONIOENCODING", "utf-8");
+        // Fix: Command not found on Windows when using git sh
+        if used_git_sh {
+            let path = std::env::var("PATH").unwrap_or_default();
+            let path = format!("{}:{}", "/mingw64/bin:/mingw32/bin:/usr/bin", path);
+            cmd.env("PATH", path);
+        }
     }
 
     // Prevent child from inheriting stdin (avoids blocking on Windows)
@@ -1608,8 +1603,8 @@ async fn tool_shell_exec(
 
     match result {
         Ok(Ok(output)) => {
-            let stdout = bytes_to_string_auto(&output.stdout);
-            let stderr = bytes_to_string_auto(&output.stderr);
+            let stdout = bytes_to_utf8_string(&output.stdout);
+            let stderr = bytes_to_utf8_string(&output.stderr);
             tracing::debug!("Command output: stdout={stdout}, stderr={stderr}");
             let exit_code = output.status.code().unwrap_or(-1);
 
@@ -3342,7 +3337,7 @@ async fn get_git_sh_path() -> Option<&'static str> {
         return None;
     }
 
-    let stdout = String::from_utf8_lossy(&output.stdout);
+    let stdout = bytes_to_utf8_string(&output.stdout);
 
     for line in stdout.lines() {
         let line = line.trim();
@@ -3434,7 +3429,8 @@ pub async fn skill_res_load(
     Err(format!("Skill: '{}' not found in registry", skill_name))
 }
 
-fn bytes_to_string_auto(bytes: &[u8]) -> String {
+/// Auto-detect encoding and convert to UTF-8
+fn bytes_to_utf8_string(bytes: &[u8]) -> String {
     // try UTF-8 first
     if let Ok(s) = String::from_utf8(bytes.to_vec()) {
         return s;
@@ -4192,5 +4188,30 @@ mod tests {
             let path = get_git_sh_path().await.unwrap();
             assert!(PathBuf::from(path).exists());
         }
+    }
+
+    #[tokio::test]
+    async fn test_sh_cmd() {
+        let path = get_git_sh_path().await.unwrap();
+        let output = std::process::Command::new(path)
+            .arg("-c")
+            .arg("echo 你好")
+            // .arg("agent-browser open http://www.baidu.com --headed")
+            .output()
+            .expect("Failed to execute git");
+        println!("stdout: {}", bytes_to_utf8_string(&output.stdout));
+
+        let output = std::process::Command::new(path)
+            .arg("-c")
+            .arg("agent-browser open http://www.baidu.com --headed")
+            .output()
+            .expect("Failed to execute git");
+        println!("stdout sh: {}", bytes_to_utf8_string(&output.stdout));
+        let output = std::process::Command::new("cmd")
+            .arg("/C")
+            .arg("agent-browser open http://www.baidu.com --headed")
+            .output()
+            .expect("Failed to execute git");
+        println!("stdout cmd: {}", bytes_to_utf8_string(&output.stdout));
     }
 }
