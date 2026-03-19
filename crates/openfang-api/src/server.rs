@@ -3,7 +3,7 @@
  * @Email              : 307253927@qq.com
  * @Date               : 2026-03-09 09:16:01
  * @LastEditors        : Felix
- * @LastEditTime       : 2026-03-19 12:05:59
+ * @LastEditTime       : 2026-03-19 17:22:19
  */
 //! OpenFang daemon server — boots the kernel and serves the HTTP API.
 
@@ -12,6 +12,7 @@ use crate::middleware;
 use crate::rate_limiter;
 use crate::routes::{self, AppState};
 use crate::uni_agent;
+use crate::uni_skill;
 use crate::webchat;
 use crate::ws;
 use axum::Router;
@@ -322,6 +323,10 @@ pub async fn build_router(
         )
         // Skills endpoints
         .route("/api/skills", axum::routing::get(routes::list_skills))
+        .route(
+            "/api/skills/reload",
+            axum::routing::post(uni_skill::reload_skills),
+        )
         .route(
             "/api/skills/install",
             axum::routing::post(routes::install_skill),

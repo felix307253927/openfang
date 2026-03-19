@@ -21,6 +21,7 @@ pub mod stream_chunker;
 pub mod stream_dedup;
 pub mod types;
 pub mod uni_agent;
+pub mod uni_skill;
 pub mod uni_util;
 pub mod unigpt;
 pub mod webchat;
