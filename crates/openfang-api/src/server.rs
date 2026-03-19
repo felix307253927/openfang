@@ -558,6 +558,10 @@ pub async fn build_router(
             "/api/skills/create",
             axum::routing::post(routes::create_skill),
         )
+        .route(
+            "/api/skills/install_local",
+            axum::routing::post(crate::uni_agent::install_local_skill),
+        )
         // Migration endpoints
         .route(
             "/api/migrate/detect",

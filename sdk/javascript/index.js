@@ -544,6 +544,52 @@ class SkillResource {
   async create(query) {
     return this._c._request("POST", "/api/skills/create", query);
   }
+
+  /**
+   * Install a skill from a local zip file or SKILL.md content.
+   * @param {File|Blob|ArrayBuffer|Uint8Array} file - Zip file or SKILL.md content
+   * @param {string} [skillName] - Optional skill name hint
+   * @returns {Promise<{status: string, name: string, version: string, slug: string, sha256: string, is_prompt_only: boolean, warnings: Array, tool_translations: Array}>}
+   * @example
+   *   // Browser: from file input
+   *   const file = document.getElementById("zipInput").files[0];
+   *   await client.skills.installLocal(file, "my-skill");
+   *
+   *   // Node.js: from file path
+   *   const fs = require("fs");
+   *   const buf = fs.readFileSync("./my-skill.zip");
+   *   await client.skills.installLocal(buf, "my-skill");
+   */
+  async installLocal(file, skillName) {
+    var url = this._c.baseUrl + "/api/skills/install_local";
+    var hdrs = {
+      "Content-Type": "application/octet-stream",
+    };
+    if (skillName) {
+      hdrs["X-Skill-Name"] = skillName;
+    }
+    var body = file;
+    // Convert ArrayBuffer / Uint8Array to Blob for fetch compatibility
+    if (file instanceof ArrayBuffer || file instanceof Uint8Array) {
+      body = new Blob([file]);
+    }
+    var res = await fetch(url, {
+      method: "POST",
+      headers: hdrs,
+      body: body,
+    });
+    if (!res.ok) {
+      var text = await res.text().catch(function () {
+        return "";
+      });
+      throw new OpenFangError(
+        "Install local skill failed: " + res.status + " " + text,
+        res.status,
+        text
+      );
+    }
+    return res.json();
+  }
 }
 
 // ── Channel Resource ────────────────────────────────────────────

@@ -101,6 +101,7 @@ export class SkillResource {
   installClawHub(query: Record<string, unknown>): Promise<unknown>;
   searchClawHub(query: Record<string, unknown>): Promise<unknown[]>;
   create(query: Record<string, unknown>): Promise<unknown>;
+  installLocal(file: Blob | File, filename?: string): Promise<unknown>;
 }
 
 export class ChannelResource {
