@@ -14,7 +14,7 @@ pub struct SkillRegistry {
     /// Installed skills keyed by name.
     skills: HashMap<String, InstalledSkill>,
     /// Skills directory.
-    skills_dir: PathBuf,
+    pub skills_dir: PathBuf,
     /// When true, no new skills can be loaded (Stable mode).
     frozen: bool,
 }
