@@ -5250,7 +5250,7 @@ impl OpenFangKernel {
             all_tools.retain(|t| t.name != "shell_exec");
         }
 
-        // if skill is not empty, should add skill_load and skill_res_load
+        // if skill is not empty, should add skill_load and skill_write
         if !skill_allowlist.is_empty() {
             let all_builtins = builtin_tool_definitions();
             if !all_tools.iter().any(|t| t.name == "skill_load") {
@@ -5258,11 +5258,8 @@ impl OpenFangKernel {
                     all_tools.push(tool.to_owned());
                 }
             }
-            if !all_tools.iter().any(|t| t.name == "skill_res_load") {
-                if let Some(tool) = all_builtins
-                    .into_iter()
-                    .find(|t| t.name == "skill_res_load")
-                {
+            if !all_tools.iter().any(|t| t.name == "skill_write") {
+                if let Some(tool) = all_builtins.into_iter().find(|t| t.name == "skill_write") {
                     all_tools.push(tool);
                 }
             }

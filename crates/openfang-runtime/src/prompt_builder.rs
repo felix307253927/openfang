@@ -588,7 +588,7 @@ pub fn tool_hint(name: &str) -> &'static str {
         "process_kill" => "terminate a running process",
         "process_list" => "list active processes",
         "skill_load" => "load a skill by name",
-        "skill_res_load" => "load a resource from the skill directory",
+        "skill_write" => "write content to a file within a skill's directory",
 
         _ => "",
     }

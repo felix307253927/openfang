@@ -448,7 +448,7 @@ pub async fn execute_tool(
         // Canvas / A2UI tool
         "canvas_present" => tool_canvas_present(input, workspace_root).await,
         "skill_load" => skill_load(input, skill_registry),
-        "skill_res_load" => skill_res_load(input, skill_registry).await,
+        "skill_write" => skill_write(input, skill_registry).await,
 
         other => {
             // Fallback 1: MCP tools (mcp_{server}_{tool} prefix)
@@ -1260,15 +1260,16 @@ pub fn builtin_tool_definitions() -> Vec<ToolDefinition> {
             }),
         },
         ToolDefinition {
-            name: "skill_res_load".to_string(),
-            description: "Reads supplementary files (references, templates, configurations, assets) that are contained within a specific Skill's directory.When accessing any file related to an active Skill (e.g., documentation mentioned in  SKILL.md , template files, config JSONs), you MUST use this tool.".to_string(),
+            name: "skill_write".to_string(),
+            description: "Creates or updates a file within a specific skill's directory. Use this to add new code, configuration, or documentation to a skill.".to_string(),
             input_schema: serde_json::json!({
                 "type": "object",
                 "properties": {
                     "skill_name": { "type": "string", "description": "The name of the skill" },
-                    "res_name": { "type": "string", "description": "The name of the resource to load" }
+                    "path": { "type": "string", "description": "The relative file path within the skill's directory" },
+                    "content": { "type": "string", "description": "The content to write into the file" }
                 },
-                "required": ["skill_name", "res_name"]
+                "required": ["skill_name", "path", "content"]
             }),
         },
     ]
@@ -3382,39 +3383,43 @@ pub fn skill_load(
     Err(format!("Skill: '{}' not found in registry", skill_name))
 }
 
-pub async fn skill_res_load(
+/// Skill write tool handler.
+pub async fn skill_write(
     input: &serde_json::Value,
     skill_registry: Option<&SkillRegistry>,
 ) -> Result<String, String> {
+    let raw_path = input["path"].as_str().ok_or("Missing 'path' parameter")?;
     let skill_name = input["skill_name"]
         .as_str()
         .ok_or("Missing 'skill_name' parameter")?;
-    let res_name = input["res_name"]
-        .as_str()
-        .ok_or("Missing 'res_name' parameter")?;
 
-    // L3 layer: get resource from registered skill
     if let Some(registry) = skill_registry {
-        if let Some(skill) = registry.get(skill_name) {
-            let root_dir = if skill.path.is_dir() {
-                Some(skill.path.as_path())
+        if let Some(_skill) = registry.get(skill_name) {
+            if openfang_types::uni_util::is_in_skills_home_dir(raw_path) {
+                let skills_home = openfang_types::uni_util::openfang_skills_home_dir();
+                let resolved = resolve_file_path(raw_path, Some(skills_home.as_path()))?;
+                let content = input["content"]
+                    .as_str()
+                    .ok_or("Missing 'content' parameter")?;
+                if let Some(parent) = resolved.parent() {
+                    tokio::fs::create_dir_all(parent)
+                        .await
+                        .map_err(|e| format!("Failed to create directories: {e}"))?;
+                }
+                tokio::fs::write(&resolved, content)
+                    .await
+                    .map_err(|e| format!("Failed to write file: {e}"))?;
+                return Ok(format!(
+                    "Successfully wrote {} bytes to {}",
+                    content.len(),
+                    resolved.display()
+                ));
             } else {
-                skill.path.parent()
-            };
-            let canon_res_path = resolve_file_path(res_name, root_dir)?;
-
-            // If it's a directory, list its contents
-            if canon_res_path.is_dir() {
-                let files = read_files_list(&canon_res_path).await?;
-                return Ok(files.join("\n"));
+                return Err(format!(
+                    "Path '{}' is not in skills_home directory",
+                    raw_path
+                ));
             }
-
-            return std::fs::read_to_string(&canon_res_path).map_err(|e| {
-                format!(
-                    "Failed to read resource '{}': {e}",
-                    canon_res_path.display()
-                )
-            });
         }
     }
 
