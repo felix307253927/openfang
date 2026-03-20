@@ -1268,7 +1268,8 @@ pub async fn run_agent_loop_streaming(
             .map(|m| (String::new(), m.content.clone()))
             .collect();
         system_prompt.push_str("\n\n");
-        system_prompt.push_str(&crate::prompt_builder::build_memory_section(&mem_pairs));
+        // TODO 不让大模型memory_recall
+        // system_prompt.push_str(&crate::prompt_builder::build_memory_section(&mem_pairs));
     }
 
     // Add the user message to session history.
