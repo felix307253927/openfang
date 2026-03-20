@@ -1856,6 +1856,7 @@ checksum = "843fba2746e448b37e26a819579957415c8cef339bf08564fe8b7ddbd959573c"
 dependencies = [
  "crc32fast",
  "miniz_oxide",
+ "zlib-rs",
 ]
 
 [[package]]
@@ -4119,7 +4120,7 @@ dependencies = [
  "tracing",
  "uuid",
  "walkdir",
- "zip 2.4.2",
+ "zip",
 ]
 
 [[package]]
@@ -5350,9 +5351,12 @@ dependencies = [
 
 [[package]]
 name = "roxmltree"
-version = "0.20.0"
+version = "0.21.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "6c20b6793b5c2fa6553b250154b78d6d0db37e72700ae35fad9387a46f487c97"
+checksum = "f1964b10c76125c36f8afe190065a4bf9a87bf324842c05701330bba9f1cacbb"
+dependencies = [
+ "memchr",
+]
 
 [[package]]
 name = "rusqlite"
@@ -6566,7 +6570,7 @@ dependencies = [
  "tokio",
  "url",
  "windows-sys 0.60.2",
- "zip 4.6.1",
+ "zip",
 ]
 
 [[package]]
@@ -9001,32 +9005,23 @@ dependencies = [
 
 [[package]]
 name = "zip"
-version = "2.4.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "fabe6324e908f85a1c52063ce7aa26b68dcb7eb6dbc83a2d148403c9bc3eba50"
-dependencies = [
- "arbitrary",
- "crc32fast",
- "crossbeam-utils",
- "displaydoc",
- "flate2",
- "indexmap 2.13.0",
- "memchr",
- "thiserror 2.0.18",
- "zopfli",
-]
-
-[[package]]
-name = "zip"
 version = "4.6.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "caa8cd6af31c3b31c6631b8f483848b91589021b28fffe50adada48d4f4d2ed1"
 dependencies = [
  "arbitrary",
  "crc32fast",
+ "flate2",
  "indexmap 2.13.0",
  "memchr",
+ "zopfli",
 ]
+
+[[package]]
+name = "zlib-rs"
+version = "0.6.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "3be3d40e40a133f9c916ee3f9f4fa2d9d63435b5fbe1bfc6d9dae0aa0ada1513"
 
 [[package]]
 name = "zmij"
