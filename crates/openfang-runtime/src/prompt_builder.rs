@@ -98,8 +98,8 @@ pub fn build_system_prompt(ctx: &PromptContext) -> String {
     }
 
     // Section 4 — Memory Protocol (always present)
-    let mem_section = build_memory_section(&ctx.recalled_memories);
-    sections.push(mem_section);
+    // let mem_section = build_memory_section(&ctx.recalled_memories);
+    // sections.push(mem_section);
 
     // Section 5 — Skills (only if skills available)
     if !ctx.skill_summary.is_empty() || !ctx.skill_prompt_context.is_empty() {
@@ -323,10 +323,11 @@ fn build_skills_section(skill_summary: &str, prompt_context: &str) -> String {
         );
         out.push_str(skill_summary.trim());
     }
-    if !prompt_context.is_empty() {
-        out.push('\n');
-        out.push_str(&cap_str(prompt_context, 10000));
-    }
+    // TODO 用skill_load加载技能描述
+    // if !prompt_context.is_empty() {
+    //     out.push('\n');
+    //     out.push_str(&cap_str(prompt_context, 10000));
+    // }
     out
 }
 
