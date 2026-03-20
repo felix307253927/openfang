@@ -1263,7 +1263,7 @@ pub async fn run_agent_loop_streaming(
     // we append recalled memories here since they are resolved at loop time.
     let mut system_prompt = manifest.model.system_prompt.clone();
     if !memories.is_empty() {
-        let mem_pairs: Vec<(String, String)> = memories
+        let _mem_pairs: Vec<(String, String)> = memories
             .iter()
             .map(|m| (String::new(), m.content.clone()))
             .collect();
