@@ -293,7 +293,7 @@ async fn handle_agent_ws(
 
     // Per-connection rate limiting: max 10 messages per 60 seconds
     let mut msg_times: Vec<std::time::Instant> = Vec::new();
-    const MAX_PER_MIN: usize = 10;
+    const MAX_PER_MIN: usize = 30;
     const WINDOW: Duration = Duration::from_secs(60);
 
     // Track last activity for idle timeout
