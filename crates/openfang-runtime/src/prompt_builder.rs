@@ -310,6 +310,8 @@ pub fn build_memory_section(memories: &[(String, String)]) -> String {
             }
         }
     }
+    // TODO 先不添加用户提示，不让大模型继续
+    out.clear();
     out
 }
 
