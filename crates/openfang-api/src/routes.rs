@@ -8189,7 +8189,11 @@ pub async fn create_skill(
 
 /// Write or update a key in the secrets.env file.
 /// File format: one `KEY=value` per line. Existing keys are overwritten.
-fn write_secret_env(path: &std::path::Path, key: &str, value: &str) -> Result<(), std::io::Error> {
+pub fn write_secret_env(
+    path: &std::path::Path,
+    key: &str,
+    value: &str,
+) -> Result<(), std::io::Error> {
     let mut lines: Vec<String> = if path.exists() {
         std::fs::read_to_string(path)?
             .lines()

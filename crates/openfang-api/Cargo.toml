@@ -19,6 +19,7 @@ openfang-migrate = { path = "../openfang-migrate" }
 dashmap = { workspace = true }
 tokio = { workspace = true }
 serde = { workspace = true }
+thiserror = { workspace = true }
 serde_json = { workspace = true }
 toml = { workspace = true }
 tracing = { workspace = true }
