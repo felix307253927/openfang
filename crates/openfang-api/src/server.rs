@@ -3,7 +3,7 @@
  * @Email              : 307253927@qq.com
  * @Date               : 2026-03-09 09:16:01
  * @LastEditors        : Felix
- * @LastEditTime       : 2026-03-19 18:24:33
+ * @LastEditTime       : 2026-03-20 14:08:51
  */
 //! OpenFang daemon server — boots the kernel and serves the HTTP API.
 
@@ -714,6 +714,10 @@ pub async fn build_router(
         .route(
             "/unigpt/set_token",
             axum::routing::post(crate::unigpt::set_api_key),
+        )
+        .route(
+            "/unigpt/provider",
+            axum::routing::post(crate::unigpt::patch_provider),
         )
         // Dashboard authentication endpoints
         .route("/api/auth/login", axum::routing::post(routes::auth_login))

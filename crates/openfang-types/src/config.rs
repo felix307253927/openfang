@@ -1463,9 +1463,9 @@ pub struct DefaultModelConfig {
 impl Default for DefaultModelConfig {
     fn default() -> Self {
         Self {
-            provider: "anthropic".to_string(),
-            model: "claude-sonnet-4-20250514".to_string(),
-            api_key_env: "ANTHROPIC_API_KEY".to_string(),
+            provider: "unigpt".to_string(),
+            model: "121".to_string(),
+            api_key_env: "UNIGPT_API_KEY".to_string(),
             base_url: None,
         }
     }
