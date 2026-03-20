@@ -315,7 +315,7 @@ pub fn build_memory_section(memories: &[(String, String)]) -> String {
     out
 }
 
-fn build_skills_section(skill_summary: &str, prompt_context: &str) -> String {
+fn build_skills_section(skill_summary: &str, _prompt_context: &str) -> String {
     let mut out = String::from("## Skills\n");
     if !skill_summary.is_empty() {
         out.push_str(

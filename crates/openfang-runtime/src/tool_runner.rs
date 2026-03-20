@@ -1304,7 +1304,15 @@ async fn tool_file_read(
 ) -> Result<String, String> {
     let raw_path = input["path"].as_str().ok_or("Missing 'path' parameter")?;
 
-    let resolved = resolve_file_path(raw_path, workspace_root)?;
+    // Handle skills directory: global skills
+    let resolved = resolve_file_path_with_skills(raw_path, workspace_root)?;
+
+    // Handle directory listing
+    if resolved.is_dir() {
+        let files = read_files_list(&resolved).await?;
+        return Ok(files.join("\n"));
+    }
+
     tokio::fs::read_to_string(&resolved)
         .await
         .map_err(|e| format!("Failed to read file: {e}"))
@@ -1363,23 +1371,7 @@ async fn tool_file_list(
     let raw_path = input["path"].as_str().ok_or("Missing 'path' parameter")?;
 
     // Handle skills directory: global skills
-    let resolved = if raw_path.contains("skills") {
-        let global_skills_dir = openfang_types::config::openfang_home_dir()
-            .join("skills")
-            .canonicalize()
-            .map_err(|e| format!("Failed to canonicalize global skills path: {e}"))?;
-        let path = PathBuf::from(raw_path)
-            .canonicalize()
-            .map_err(|e| format!("Failed to canonicalize path: {e}"))?;
-        let workspace_root = if path.starts_with(&global_skills_dir) {
-            Some(global_skills_dir.as_path())
-        } else {
-            workspace_root
-        };
-        resolve_file_path(raw_path, workspace_root)?
-    } else {
-        resolve_file_path(raw_path, workspace_root)?
-    };
+    let resolved = resolve_file_path_with_skills(raw_path, workspace_root)?;
 
     let files = read_files_list(&resolved).await?;
     Ok(files.join("\n"))
@@ -3446,6 +3438,29 @@ fn bytes_to_utf8_string(bytes: &[u8]) -> String {
 
     // fallback to lossy UTF-8
     String::from_utf8_lossy(bytes).to_string()
+}
+
+fn resolve_file_path_with_skills(
+    raw_path: &str,
+    workspace_root: Option<&Path>,
+) -> Result<PathBuf, String> {
+    if raw_path.contains("skills") {
+        let global_skills_dir = openfang_types::config::openfang_home_dir()
+            .join("skills")
+            .canonicalize()
+            .map_err(|e| format!("Failed to canonicalize global skills path: {e}"))?;
+        let path = PathBuf::from(raw_path)
+            .canonicalize()
+            .map_err(|e| format!("Failed to canonicalize path: {e}"))?;
+        let workspace_root = if path.starts_with(&global_skills_dir) {
+            Some(global_skills_dir.as_path())
+        } else {
+            workspace_root
+        };
+        resolve_file_path(raw_path, workspace_root)
+    } else {
+        resolve_file_path(raw_path, workspace_root)
+    }
 }
 
 #[cfg(test)]
