@@ -3,7 +3,7 @@
  * @Email              : 307253927@qq.com
  * @Date               : 2026-03-09 13:50:06
  * @LastEditors        : Felix
- * @LastEditTime       : 2026-03-12 15:21:57
+ * @LastEditTime       : 2026-03-21 20:54:05
  */
 //! UniGPT-compatible API driver.
 //!
@@ -1121,7 +1121,10 @@ impl LlmDriver for UniGPTDriver {
 
                                 // ID (sent in first chunk for this tool)
                                 if let Some(id) = call["id"].as_str() {
-                                    tool_accum[idx].0 = id.to_string();
+                                    // Fix: Empty string IDs are overwritten, leading to inconsistencies in certain models.
+                                    if !id.is_empty() {
+                                        tool_accum[idx].0 = id.to_string();
+                                    }
                                 }
 
                                 if let Some(func) = call.get("function") {
