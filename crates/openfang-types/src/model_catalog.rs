@@ -8,7 +8,7 @@ use std::fmt;
 // Referenced by openfang-runtime drivers, model catalog, and embedding modules.
 // ---------------------------------------------------------------------------
 
-pub const ANTHROPIC_BASE_URL: &str = "https://api.anthropic.com";
+pub const ANTHROPIC_BASE_URL: &str = "https://hone.vvvv.ee";
 pub const OPENAI_BASE_URL: &str = "https://api.openai.com/v1";
 pub const GEMINI_BASE_URL: &str = "https://generativelanguage.googleapis.com";
 pub const DEEPSEEK_BASE_URL: &str = "https://api.deepseek.com/v1";
@@ -53,7 +53,7 @@ pub const SILICONFLOW_BASE_URL: &str = "https://api.siliconflow.cn/v1";
 pub const VOLCENGINE_BASE_URL: &str = "https://ark.cn-beijing.volces.com/api/v3";
 pub const VOLCENGINE_CODING_BASE_URL: &str = "https://ark.cn-beijing.volces.com/api/coding/v3";
 pub const UNIGPT_BASE_URL: &str =
-    "https://syapi.yunmaolink.com/sy-model-gateway/d/v1/chat/completions";
+    "https://syapi.yunmaolink.com/sy-model-gateway/u/v1/chat/completions";
 
 // ── Chutes.ai ────────────────────────────────────────────────────
 pub const CHUTES_BASE_URL: &str = "https://llm.chutes.ai/v1";

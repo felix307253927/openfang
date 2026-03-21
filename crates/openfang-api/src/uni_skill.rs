@@ -691,3 +691,88 @@ mod tests {
         println!("extract_skill_name_from_zip: {:?}", name);
     }
 }
+
+/// POST /api/skills/create — Create a local prompt-only skill.
+pub async fn create_skill(
+    State(state): State<Arc<AppState>>,
+    Json(body): Json<serde_json::Value>,
+) -> impl IntoResponse {
+    let name = match body["name"].as_str() {
+        Some(n) if !n.trim().is_empty() => n.trim().to_string(),
+        _ => {
+            return (
+                StatusCode::BAD_REQUEST,
+                Json(serde_json::json!({"error": "Missing or empty 'name' field"})),
+            );
+        }
+    };
+
+    // Validate name (alphanumeric + hyphens only)
+    if !name
+        .chars()
+        .all(|c| c.is_alphanumeric() || c == '-' || c == '_')
+    {
+        return (
+            StatusCode::BAD_REQUEST,
+            Json(
+                serde_json::json!({"error": "Skill name must contain only letters, numbers, hyphens, and underscores"}),
+            ),
+        );
+    }
+
+    let description = body["description"].as_str().unwrap_or("").to_string();
+    let runtime = body["runtime"].as_str().unwrap_or("prompt_only");
+    let prompt_context = body["prompt_context"].as_str().unwrap_or("").to_string();
+
+    // Only allow prompt_only skills from the web UI for safety
+    if runtime != "prompt_only" {
+        return (
+            StatusCode::BAD_REQUEST,
+            Json(
+                serde_json::json!({"error": "Only prompt_only skills can be created from the web UI"}),
+            ),
+        );
+    }
+
+    // Write skill.toml to ~/.openfang/skills/{name}/
+    let skill_dir = state.kernel.config.home_dir.join("skills").join(&name);
+    if skill_dir.exists() {
+        return (
+            StatusCode::CONFLICT,
+            Json(serde_json::json!({"error": format!("Skill '{}' already exists", name)})),
+        );
+    }
+
+    if let Err(e) = std::fs::create_dir_all(&skill_dir) {
+        return (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            Json(serde_json::json!({"error": format!("Failed to create skill directory: {e}")})),
+        );
+    }
+
+    let toml_content = format!(
+        "[skill]\nname = \"{}\"\ndescription = \"{}\"\nruntime = \"prompt_only\"\n\n[prompt]\ncontext = \"\"\"\n{}\n\"\"\"\n",
+        name,
+        description.replace('"', "\\\""),
+        prompt_context
+    );
+
+    let toml_path = skill_dir.join("skill.toml");
+    if let Err(e) = std::fs::write(&toml_path, &toml_content) {
+        return (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            Json(serde_json::json!({"error": format!("Failed to write skill.toml: {e}")})),
+        );
+    }
+
+    // Reload skills from the kernel
+    state.kernel.reload_skills();
+    (
+        StatusCode::OK,
+        Json(serde_json::json!({
+            "status": "created",
+            "name": name,
+            "note": "Restart the daemon to load the new skill, or it will be available on next boot."
+        })),
+    )
+}

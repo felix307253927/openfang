@@ -561,7 +561,7 @@ pub async fn build_router(
         )
         .route(
             "/api/skills/create",
-            axum::routing::post(routes::create_skill),
+            axum::routing::post(uni_skill::create_skill),
         )
         .route(
             "/api/skills/install_local",
