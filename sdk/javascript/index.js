@@ -688,7 +688,7 @@ class ModelResource {
     return this._c._request("POST", "/api/models/custom", model);
   }
   async removeCustomModel(model) {
-    return this._c._request("DELETE", "/api/models/custom", model);
+    return this._c._request("DELETE", "/api/models/custom/" + model);
   }
 }
 
