@@ -996,6 +996,7 @@ pub async fn get_agent_skills(
             serde_json::json!({
                 "name": s.manifest.skill.name,
                 "description": s.manifest.skill.description,
+                "source": s.manifest.source,
                 "enabled": s.enabled,
             })
         })
