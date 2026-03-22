@@ -3,7 +3,7 @@
  * @Email              : 307253927@qq.com
  * @Date               : 2026-03-09 13:50:06
  * @LastEditors        : Felix
- * @LastEditTime       : 2026-03-22 14:05:20
+ * @LastEditTime       : 2026-03-22 16:06:00
  */
 //! UniGPT-compatible API driver.
 //!
@@ -870,10 +870,10 @@ impl LlmDriver for UniGPTDriver {
         for attempt in 0..=max_retries {
             let url = self.base_url.to_string();
             info!(url = %url, attempt, "Sending UniGPT streaming request");
-            debug!(
-                "Request: {:?}",
+            crate::log_request::log_message(&format!(
+                "\n\n\nOpenAI request: {:?}",
                 serde_json::to_string(&uni_request).unwrap_or_default()
-            );
+            ));
 
             let mut req_builder = self
                 .client
@@ -1097,8 +1097,11 @@ impl LlmDriver for UniGPTDriver {
                             }
                         }
 
-                        // Reasoning/thinking content delta (DeepSeek-R1, Qwen3 via LM Studio/Ollama)
-                        if let Some(reasoning) = delta["reasoning_content"].as_str() {
+                        // reasoning content delta (eg. Qwen3-397B)
+                        if let Some(reasoning) = delta["reasoning_content"]
+                            .as_str()
+                            .or_else(|| delta["reasoning"].as_str())
+                        {
                             if !reasoning.is_empty() {
                                 reasoning_content.push_str(reasoning);
                                 let _ = tx
