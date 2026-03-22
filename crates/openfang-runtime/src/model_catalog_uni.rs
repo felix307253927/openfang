@@ -3,7 +3,7 @@
  * @Email              : 307253927@qq.com
  * @Date               : 2026-03-22 16:08:27
  * @LastEditors        : Felix
- * @LastEditTime       : 2026-03-22 17:03:22
+ * @LastEditTime       : 2026-03-22 18:10:13
  */
 //! Model catalog — registry of known models with metadata, pricing, and auth detection.
 //!
@@ -2230,20 +2230,6 @@ fn builtin_models() -> Vec<ModelCatalogEntry> {
             aliases: vec![],
         },
         ModelCatalogEntry {
-            id: "minimax-m2.5".into(),
-            display_name: "minimax-m2.5".into(),
-            provider: "volcengine_coding".into(),
-            tier: ModelTier::Smart,
-            context_window: 131_072,
-            max_output_tokens: 16_384,
-            input_cost_per_m: 0.50,
-            output_cost_per_m: 1.00,
-            supports_tools: true,
-            supports_vision: false,
-            supports_streaming: true,
-            aliases: vec!["doubao-code".into()],
-        },
-        ModelCatalogEntry {
             id: "kimi-k2.5".into(),
             display_name: "kimi-k2.5".into(),
             provider: "volcengine_coding".into(),
@@ -2408,20 +2394,6 @@ fn builtin_models() -> Vec<ModelCatalogEntry> {
             supports_vision: true,
             supports_streaming: true,
             aliases: vec!["glm-5".into()],
-        },
-        ModelCatalogEntry {
-            id: "MiniMax-M2.5".into(),
-            display_name: "MiniMax-M2.5".into(),
-            provider: "coding_plan".into(),
-            tier: ModelTier::Fast,
-            context_window: 248320,
-            max_output_tokens: 248320,
-            input_cost_per_m: 0.0,
-            output_cost_per_m: 0.0,
-            supports_tools: true,
-            supports_vision: true,
-            supports_streaming: true,
-            aliases: vec![],
         },
         ModelCatalogEntry {
             id: "qwen3.5-plus".into(),
