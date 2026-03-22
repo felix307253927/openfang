@@ -3920,7 +3920,8 @@ fn clawhub_browse_entry_to_json(
     serde_json::json!({
         "slug": entry.slug,
         "name": entry.name,
-        "description": entry.description,
+        "description": entry.description_zh,
+        "description_en": entry.description,
         "version": entry.version,
         "downloads": entry.downloads,
         "stars": entry.stars,
