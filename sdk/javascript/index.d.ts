@@ -52,7 +52,7 @@ export class AgentResource {
   list(): Promise<unknown[]>;
   get(id: string): Promise<unknown>;
   create(
-    opts: AgentCreateOpts
+    opts: AgentCreateOpts,
   ): Promise<{ id: string; [key: string]: unknown }>;
   delete(id: string): Promise<unknown>;
   stop(id: string): Promise<unknown>;
@@ -64,7 +64,7 @@ export class AgentResource {
   stream(
     id: string,
     text: string,
-    opts?: MessageOpts
+    opts?: MessageOpts,
   ): AsyncGenerator<StreamEvent>;
   session(id: string): Promise<unknown>;
   resetSession(id: string): Promise<unknown>;
@@ -102,6 +102,7 @@ export class SkillResource {
   searchClawHub(query: Record<string, unknown>): Promise<unknown[]>;
   create(query: Record<string, unknown>): Promise<unknown>;
   installLocal(file: Blob | File, filename?: string): Promise<unknown>;
+  reload(): Promise<unknown>;
 }
 
 export class ChannelResource {
