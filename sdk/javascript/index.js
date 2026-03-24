@@ -36,7 +36,7 @@ class OpenFang {
     this.baseUrl = baseUrl.replace(/\/+$/, "");
     this._headers = Object.assign(
       { "Content-Type": "application/json" },
-      (opts && opts.headers) || {}
+      (opts && opts.headers) || {},
     );
     this.agents = new AgentResource(this);
     this.sessions = new SessionResource(this);
@@ -91,7 +91,7 @@ class OpenFang {
       throw new OpenFangError(
         "HTTP " + res.status + ": " + text,
         res.status,
-        text
+        text,
       );
     }
     var reader = res.body.getReader();
@@ -230,7 +230,7 @@ class AgentResource {
     yield* this._c._stream(
       "POST",
       "/api/agents/" + id + "/message/stream",
-      body
+      body,
     );
   }
 
@@ -265,7 +265,7 @@ class AgentResource {
   async switchSession(id, sessionId) {
     return this._c._request(
       "POST",
-      "/api/agents/" + id + "/sessions/" + sessionId + "/switch"
+      "/api/agents/" + id + "/sessions/" + sessionId + "/switch",
     );
   }
 
@@ -292,13 +292,15 @@ class AgentResource {
 
   async upload(agentId, file) {
     var hdrs = {
-      "Content-Type": file.type || "application/octet-stream",
-      "X-Filename": file.name,
+      "Content-Type": "multipart/form-data",
     };
+    var form = new FormData();
+    form.append("file", file);
+    form.append("filename", file.name);
     return fetch(this._c.baseUrl + "/api/agents/" + agentId + "/upload", {
       method: "POST",
       headers: hdrs,
-      body: file,
+      body: form,
     }).then(function (r) {
       if (!r.ok) throw new Error("Upload failed");
       return r.json();
@@ -310,7 +312,7 @@ class AgentResource {
     return this._c._request(
       "PATCH",
       "/api/agents/" + id + "/identity",
-      identity
+      identity,
     );
   }
 
@@ -498,7 +500,7 @@ class SkillResource {
   async search(query) {
     return this._c._request(
       "GET",
-      "/api/marketplace/search?q=" + encodeURIComponent(query)
+      "/api/marketplace/search?q=" + encodeURIComponent(query),
     );
   }
   /** page: 1,
@@ -514,7 +516,7 @@ class SkillResource {
         "&pageSize=" +
         query.pageSize +
         "&page=" +
-        query.page
+        query.page,
     );
   }
 
@@ -527,7 +529,7 @@ class SkillResource {
         "&page=" +
         query.page +
         "&pageSize=" +
-        query.pageSize
+        query.pageSize,
     );
   }
 
@@ -581,7 +583,7 @@ class SkillResource {
       throw new OpenFangError(
         "Install local skill failed: " + res.status + " " + text,
         res.status,
-        text
+        text,
       );
     }
     return res.json();
@@ -607,7 +609,7 @@ class ChannelResource {
     return this._c._request(
       "POST",
       "/api/channels/" + name + "/configure",
-      config
+      config,
     );
   }
 
@@ -742,7 +744,7 @@ class MemoryResource {
   async get(agentId, key) {
     return this._c._request(
       "GET",
-      "/api/memory/agents/" + agentId + "/kv/" + key
+      "/api/memory/agents/" + agentId + "/kv/" + key,
     );
   }
 
@@ -750,14 +752,14 @@ class MemoryResource {
     return this._c._request(
       "PUT",
       "/api/memory/agents/" + agentId + "/kv/" + key,
-      { value: value }
+      { value: value },
     );
   }
 
   async delete(agentId, key) {
     return this._c._request(
       "DELETE",
-      "/api/memory/agents/" + agentId + "/kv/" + key
+      "/api/memory/agents/" + agentId + "/kv/" + key,
     );
   }
 }
