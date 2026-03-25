@@ -1564,99 +1564,105 @@ impl std::fmt::Debug for NetworkConfig {
 #[derive(Debug, Clone, Default, Serialize, Deserialize)]
 #[serde(default)]
 pub struct ChannelsConfig {
-    /// Telegram bot configuration (None = disabled).
-    pub telegram: Option<TelegramConfig>,
-    /// Discord bot configuration (None = disabled).
-    pub discord: Option<DiscordConfig>,
-    /// Slack bot configuration (None = disabled).
-    pub slack: Option<SlackConfig>,
-    /// WhatsApp Cloud API configuration (None = disabled).
-    pub whatsapp: Option<WhatsAppConfig>,
-    /// Signal (via signal-cli) configuration (None = disabled).
-    pub signal: Option<SignalConfig>,
-    /// Matrix protocol configuration (None = disabled).
-    pub matrix: Option<MatrixConfig>,
-    /// Email (IMAP/SMTP) configuration (None = disabled).
-    pub email: Option<EmailConfig>,
-    /// Microsoft Teams configuration (None = disabled).
-    pub teams: Option<TeamsConfig>,
-    /// Mattermost configuration (None = disabled).
-    pub mattermost: Option<MattermostConfig>,
-    /// IRC configuration (None = disabled).
-    pub irc: Option<IrcConfig>,
-    /// Google Chat configuration (None = disabled).
-    pub google_chat: Option<GoogleChatConfig>,
-    /// Twitch chat configuration (None = disabled).
-    pub twitch: Option<TwitchConfig>,
-    /// Rocket.Chat configuration (None = disabled).
-    pub rocketchat: Option<RocketChatConfig>,
-    /// Zulip configuration (None = disabled).
-    pub zulip: Option<ZulipConfig>,
-    /// XMPP/Jabber configuration (None = disabled).
-    pub xmpp: Option<XmppConfig>,
+    /// Telegram bot configurations (empty = disabled).
+    pub telegram: Vec<TelegramConfig>,
+    /// Discord bot configurations (empty = disabled).
+    pub discord: Vec<DiscordConfig>,
+    /// Slack bot configurations (empty = disabled).
+    pub slack: Vec<SlackConfig>,
+    /// WhatsApp Cloud API configurations (empty = disabled).
+    pub whatsapp: Vec<WhatsAppConfig>,
+    /// Signal (via signal-cli) configurations (empty = disabled).
+    pub signal: Vec<SignalConfig>,
+    /// Matrix protocol configurations (empty = disabled).
+    pub matrix: Vec<MatrixConfig>,
+    /// Email (IMAP/SMTP) configurations (empty = disabled).
+    pub email: Vec<EmailConfig>,
+    /// Microsoft Teams configurations (empty = disabled).
+    pub teams: Vec<TeamsConfig>,
+    /// Mattermost configurations (empty = disabled).
+    pub mattermost: Vec<MattermostConfig>,
+    /// IRC configurations (empty = disabled).
+    pub irc: Vec<IrcConfig>,
+    /// Google Chat configurations (empty = disabled).
+    pub google_chat: Vec<GoogleChatConfig>,
+    /// Twitch chat configurations (empty = disabled).
+    pub twitch: Vec<TwitchConfig>,
+    /// Rocket.Chat configurations (empty = disabled).
+    pub rocketchat: Vec<RocketChatConfig>,
+    /// Zulip configurations (empty = disabled).
+    pub zulip: Vec<ZulipConfig>,
+    /// XMPP/Jabber configurations (empty = disabled).
+    pub xmpp: Vec<XmppConfig>,
     // Wave 3 — High-value channels
-    /// LINE Messaging API configuration (None = disabled).
-    pub line: Option<LineConfig>,
-    /// Viber Bot API configuration (None = disabled).
-    pub viber: Option<ViberConfig>,
-    /// Facebook Messenger configuration (None = disabled).
-    pub messenger: Option<MessengerConfig>,
-    /// Reddit API configuration (None = disabled).
-    pub reddit: Option<RedditConfig>,
-    /// Mastodon Streaming API configuration (None = disabled).
-    pub mastodon: Option<MastodonConfig>,
-    /// Bluesky/AT Protocol configuration (None = disabled).
-    pub bluesky: Option<BlueskyConfig>,
-    /// Feishu/Lark Open Platform configuration (None = disabled).
-    pub feishu: Option<FeishuConfig>,
-    /// Revolt (Discord-like) configuration (None = disabled).
-    pub revolt: Option<RevoltConfig>,
+    /// LINE Messaging API configurations (empty = disabled).
+    pub line: Vec<LineConfig>,
+    /// Viber Bot API configurations (empty = disabled).
+    pub viber: Vec<ViberConfig>,
+    /// Facebook Messenger configurations (empty = disabled).
+    pub messenger: Vec<MessengerConfig>,
+    /// Reddit API configurations (empty = disabled).
+    pub reddit: Vec<RedditConfig>,
+    /// Mastodon Streaming API configurations (empty = disabled).
+    pub mastodon: Vec<MastodonConfig>,
+    /// Bluesky/AT Protocol configurations (empty = disabled).
+    pub bluesky: Vec<BlueskyConfig>,
+    /// Feishu/Lark Open Platform configurations (empty = disabled).
+    pub feishu: Vec<FeishuConfig>,
+    /// Revolt (Discord-like) configurations (empty = disabled).
+    pub revolt: Vec<RevoltConfig>,
     // Wave 4 — Enterprise & community channels
-    /// Nextcloud Talk configuration (None = disabled).
-    pub nextcloud: Option<NextcloudConfig>,
-    /// Guilded bot configuration (None = disabled).
-    pub guilded: Option<GuildedConfig>,
-    /// Keybase chat configuration (None = disabled).
-    pub keybase: Option<KeybaseConfig>,
-    /// Threema Gateway configuration (None = disabled).
-    pub threema: Option<ThreemaConfig>,
-    /// Nostr relay configuration (None = disabled).
-    pub nostr: Option<NostrConfig>,
-    /// Webex bot configuration (None = disabled).
-    pub webex: Option<WebexConfig>,
-    /// Pumble bot configuration (None = disabled).
-    pub pumble: Option<PumbleConfig>,
-    /// Flock bot configuration (None = disabled).
-    pub flock: Option<FlockConfig>,
-    /// Twist API configuration (None = disabled).
-    pub twist: Option<TwistConfig>,
+    /// Nextcloud Talk configurations (empty = disabled).
+    pub nextcloud: Vec<NextcloudConfig>,
+    /// Guilded bot configurations (empty = disabled).
+    pub guilded: Vec<GuildedConfig>,
+    /// Keybase chat configurations (empty = disabled).
+    pub keybase: Vec<KeybaseConfig>,
+    /// Threema Gateway configurations (empty = disabled).
+    pub threema: Vec<ThreemaConfig>,
+    /// Nostr relay configurations (empty = disabled).
+    pub nostr: Vec<NostrConfig>,
+    /// Webex bot configurations (empty = disabled).
+    pub webex: Vec<WebexConfig>,
+    /// Pumble bot configurations (empty = disabled).
+    pub pumble: Vec<PumbleConfig>,
+    /// Flock bot configurations (empty = disabled).
+    pub flock: Vec<FlockConfig>,
+    /// Twist API configurations (empty = disabled).
+    pub twist: Vec<TwistConfig>,
     // Wave 5 — Niche & differentiating channels
-    /// Mumble text chat configuration (None = disabled).
-    pub mumble: Option<MumbleConfig>,
-    /// DingTalk robot configuration — webhook mode (None = disabled).
-    pub dingtalk: Option<DingTalkConfig>,
-    /// DingTalk Stream mode — long-lived WebSocket (None = disabled).
-    pub dingtalk_stream: Option<DingTalkStreamConfig>,
-    /// Discourse forum configuration (None = disabled).
-    pub discourse: Option<DiscourseConfig>,
-    /// Gitter streaming configuration (None = disabled).
-    pub gitter: Option<GitterConfig>,
-    /// ntfy.sh pub/sub configuration (None = disabled).
-    pub ntfy: Option<NtfyConfig>,
-    /// Gotify notification configuration (None = disabled).
-    pub gotify: Option<GotifyConfig>,
-    /// Generic webhook configuration (None = disabled).
-    pub webhook: Option<WebhookConfig>,
-    /// LinkedIn messaging configuration (None = disabled).
-    pub linkedin: Option<LinkedInConfig>,
-    /// WeCom/WeChat Work configuration (None = disabled).
-    pub wecom: Option<WeComConfig>,
+    /// Mumble text chat configurations (empty = disabled).
+    pub mumble: Vec<MumbleConfig>,
+    /// DingTalk robot configurations — webhook mode (empty = disabled).
+    pub dingtalk: Vec<DingTalkConfig>,
+    /// DingTalk Stream mode configurations — long-lived WebSocket (empty = disabled).
+    pub dingtalk_stream: Vec<DingTalkStreamConfig>,
+    /// Discourse forum configurations (empty = disabled).
+    pub discourse: Vec<DiscourseConfig>,
+    /// Gitter streaming configurations (empty = disabled).
+    pub gitter: Vec<GitterConfig>,
+    /// ntfy.sh pub/sub configurations (empty = disabled).
+    pub ntfy: Vec<NtfyConfig>,
+    /// Gotify notification configurations (empty = disabled).
+    pub gotify: Vec<GotifyConfig>,
+    /// Generic webhook configurations (empty = disabled).
+    pub webhook: Vec<WebhookConfig>,
+    /// LinkedIn messaging configurations (empty = disabled).
+    pub linkedin: Vec<LinkedInConfig>,
+    /// WeCom/WeChat Work configurations (empty = disabled).
+    pub wecom: Vec<WeComConfig>,
 }
 
 /// Telegram channel adapter configuration.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(default)]
 pub struct TelegramConfig {
+    /// Display name for this channel configuration.
+    #[serde(default)]
+    pub name: Option<String>,
+    /// Icon (emoji or URL) for this channel configuration.
+    #[serde(default)]
+    pub icon: Option<String>,
     /// Env var name holding the bot token (NOT the token itself).
     pub bot_token_env: String,
     /// Telegram user IDs allowed to interact (empty = allow all).
@@ -1683,6 +1689,8 @@ pub struct TelegramConfig {
 impl Default for TelegramConfig {
     fn default() -> Self {
         Self {
+            name: None,
+            icon: None,
             bot_token_env: "TELEGRAM_BOT_TOKEN".to_string(),
             allowed_users: vec![],
             default_agent: None,
@@ -1698,6 +1706,12 @@ impl Default for TelegramConfig {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(default)]
 pub struct DiscordConfig {
+    /// Display name for this channel configuration.
+    #[serde(default)]
+    pub name: Option<String>,
+    /// Icon (emoji or URL) for this channel configuration.
+    #[serde(default)]
+    pub icon: Option<String>,
     /// Env var name holding the bot token (NOT the token itself).
     pub bot_token_env: String,
     /// Guild (server) IDs allowed to interact (empty = allow all).
@@ -1726,6 +1740,8 @@ pub struct DiscordConfig {
 impl Default for DiscordConfig {
     fn default() -> Self {
         Self {
+            name: None,
+            icon: None,
             bot_token_env: "DISCORD_BOT_TOKEN".to_string(),
             allowed_guilds: vec![],
             allowed_users: vec![],
@@ -1742,6 +1758,12 @@ impl Default for DiscordConfig {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(default)]
 pub struct SlackConfig {
+    /// Display name for this channel configuration.
+    #[serde(default)]
+    pub name: Option<String>,
+    /// Icon (emoji or URL) for this channel configuration.
+    #[serde(default)]
+    pub icon: Option<String>,
     /// Env var name holding the app-level token (xapp-) for Socket Mode.
     pub app_token_env: String,
     /// Env var name holding the bot token (xoxb-) for REST API.
@@ -1768,6 +1790,8 @@ pub struct SlackConfig {
 impl Default for SlackConfig {
     fn default() -> Self {
         Self {
+            name: None,
+            icon: None,
             app_token_env: "SLACK_APP_TOKEN".to_string(),
             bot_token_env: "SLACK_BOT_TOKEN".to_string(),
             allowed_channels: vec![],
@@ -1784,6 +1808,12 @@ impl Default for SlackConfig {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(default)]
 pub struct WhatsAppConfig {
+    /// Display name for this channel configuration.
+    #[serde(default)]
+    pub name: Option<String>,
+    /// Icon (emoji or URL) for this channel configuration.
+    #[serde(default)]
+    pub icon: Option<String>,
     /// Env var name holding the access token (Cloud API mode).
     pub access_token_env: String,
     /// Env var name holding the webhook verify token (Cloud API mode).
@@ -1808,6 +1838,8 @@ pub struct WhatsAppConfig {
 impl Default for WhatsAppConfig {
     fn default() -> Self {
         Self {
+            name: None,
+            icon: None,
             access_token_env: "WHATSAPP_ACCESS_TOKEN".to_string(),
             verify_token_env: "WHATSAPP_VERIFY_TOKEN".to_string(),
             phone_number_id: String::new(),
@@ -1824,6 +1856,12 @@ impl Default for WhatsAppConfig {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(default)]
 pub struct SignalConfig {
+    /// Display name for this channel configuration.
+    #[serde(default)]
+    pub name: Option<String>,
+    /// Icon (emoji or URL) for this channel configuration.
+    #[serde(default)]
+    pub icon: Option<String>,
     /// URL of the signal-cli REST API (e.g., "http://localhost:8080").
     pub api_url: String,
     /// Registered phone number.
@@ -1841,6 +1879,8 @@ pub struct SignalConfig {
 impl Default for SignalConfig {
     fn default() -> Self {
         Self {
+            name: None,
+            icon: None,
             api_url: "http://localhost:8080".to_string(),
             phone_number: String::new(),
             allowed_users: vec![],
@@ -1854,6 +1894,12 @@ impl Default for SignalConfig {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(default)]
 pub struct MatrixConfig {
+    /// Display name for this channel configuration.
+    #[serde(default)]
+    pub name: Option<String>,
+    /// Icon (emoji or URL) for this channel configuration.
+    #[serde(default)]
+    pub icon: Option<String>,
     /// Matrix homeserver URL (e.g., `"https://matrix.org"`).
     pub homeserver_url: String,
     /// Bot user ID (e.g., "@openfang:matrix.org").
@@ -1876,6 +1922,8 @@ pub struct MatrixConfig {
 impl Default for MatrixConfig {
     fn default() -> Self {
         Self {
+            name: None,
+            icon: None,
             homeserver_url: "https://matrix.org".to_string(),
             user_id: String::new(),
             access_token_env: "MATRIX_ACCESS_TOKEN".to_string(),
@@ -1891,6 +1939,12 @@ impl Default for MatrixConfig {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(default)]
 pub struct EmailConfig {
+    /// Display name for this channel configuration.
+    #[serde(default)]
+    pub name: Option<String>,
+    /// Icon (emoji or URL) for this channel configuration.
+    #[serde(default)]
+    pub icon: Option<String>,
     /// IMAP server host.
     pub imap_host: String,
     /// IMAP port (993 for TLS).
@@ -1921,6 +1975,8 @@ pub struct EmailConfig {
 impl Default for EmailConfig {
     fn default() -> Self {
         Self {
+            name: None,
+            icon: None,
             imap_host: String::new(),
             imap_port: 993,
             smtp_host: String::new(),
@@ -1940,6 +1996,12 @@ impl Default for EmailConfig {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(default)]
 pub struct TeamsConfig {
+    /// Display name for this channel configuration.
+    #[serde(default)]
+    pub name: Option<String>,
+    /// Icon (emoji or URL) for this channel configuration.
+    #[serde(default)]
+    pub icon: Option<String>,
     /// Azure Bot App ID.
     pub app_id: String,
     /// Env var name holding the app password.
@@ -1959,6 +2021,8 @@ pub struct TeamsConfig {
 impl Default for TeamsConfig {
     fn default() -> Self {
         Self {
+            name: None,
+            icon: None,
             app_id: String::new(),
             app_password_env: "TEAMS_APP_PASSWORD".to_string(),
             webhook_port: 3978,
@@ -1973,6 +2037,12 @@ impl Default for TeamsConfig {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(default)]
 pub struct MattermostConfig {
+    /// Display name for this channel configuration.
+    #[serde(default)]
+    pub name: Option<String>,
+    /// Icon (emoji or URL) for this channel configuration.
+    #[serde(default)]
+    pub icon: Option<String>,
     /// Mattermost server URL (e.g., `"https://mattermost.example.com"`).
     pub server_url: String,
     /// Env var name holding the bot token.
@@ -1990,6 +2060,8 @@ pub struct MattermostConfig {
 impl Default for MattermostConfig {
     fn default() -> Self {
         Self {
+            name: None,
+            icon: None,
             server_url: String::new(),
             token_env: "MATTERMOST_TOKEN".to_string(),
             allowed_channels: vec![],
@@ -2003,6 +2075,12 @@ impl Default for MattermostConfig {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(default)]
 pub struct IrcConfig {
+    /// Display name for this channel configuration.
+    #[serde(default)]
+    pub name: Option<String>,
+    /// Icon (emoji or URL) for this channel configuration.
+    #[serde(default)]
+    pub icon: Option<String>,
     /// IRC server hostname.
     pub server: String,
     /// IRC server port.
@@ -2026,6 +2104,8 @@ pub struct IrcConfig {
 impl Default for IrcConfig {
     fn default() -> Self {
         Self {
+            name: None,
+            icon: None,
             server: "irc.libera.chat".to_string(),
             port: 6667,
             nick: "openfang".to_string(),
@@ -2042,6 +2122,12 @@ impl Default for IrcConfig {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(default)]
 pub struct GoogleChatConfig {
+    /// Display name for this channel configuration.
+    #[serde(default)]
+    pub name: Option<String>,
+    /// Icon (emoji or URL) for this channel configuration.
+    #[serde(default)]
+    pub icon: Option<String>,
     /// Env var name holding the service account JSON key.
     pub service_account_env: String,
     /// Space IDs to listen in.
@@ -2059,6 +2145,8 @@ pub struct GoogleChatConfig {
 impl Default for GoogleChatConfig {
     fn default() -> Self {
         Self {
+            name: None,
+            icon: None,
             service_account_env: "GOOGLE_CHAT_SERVICE_ACCOUNT".to_string(),
             space_ids: vec![],
             webhook_port: 8444,
@@ -2072,6 +2160,12 @@ impl Default for GoogleChatConfig {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(default)]
 pub struct TwitchConfig {
+    /// Display name for this channel configuration.
+    #[serde(default)]
+    pub name: Option<String>,
+    /// Icon (emoji or URL) for this channel configuration.
+    #[serde(default)]
+    pub icon: Option<String>,
     /// Env var name holding the OAuth token.
     pub oauth_token_env: String,
     /// Twitch channels to join (without #).
@@ -2089,6 +2183,8 @@ pub struct TwitchConfig {
 impl Default for TwitchConfig {
     fn default() -> Self {
         Self {
+            name: None,
+            icon: None,
             oauth_token_env: "TWITCH_OAUTH_TOKEN".to_string(),
             channels: vec![],
             nick: "openfang".to_string(),
@@ -2102,6 +2198,12 @@ impl Default for TwitchConfig {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(default)]
 pub struct RocketChatConfig {
+    /// Display name for this channel configuration.
+    #[serde(default)]
+    pub name: Option<String>,
+    /// Icon (emoji or URL) for this channel configuration.
+    #[serde(default)]
+    pub icon: Option<String>,
     /// Rocket.Chat server URL.
     pub server_url: String,
     /// Env var name holding the auth token.
@@ -2121,6 +2223,8 @@ pub struct RocketChatConfig {
 impl Default for RocketChatConfig {
     fn default() -> Self {
         Self {
+            name: None,
+            icon: None,
             server_url: String::new(),
             token_env: "ROCKETCHAT_TOKEN".to_string(),
             user_id: String::new(),
@@ -2135,6 +2239,12 @@ impl Default for RocketChatConfig {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(default)]
 pub struct ZulipConfig {
+    /// Display name for this channel configuration.
+    #[serde(default)]
+    pub name: Option<String>,
+    /// Icon (emoji or URL) for this channel configuration.
+    #[serde(default)]
+    pub icon: Option<String>,
     /// Zulip server URL.
     pub server_url: String,
     /// Bot email address.
@@ -2154,6 +2264,8 @@ pub struct ZulipConfig {
 impl Default for ZulipConfig {
     fn default() -> Self {
         Self {
+            name: None,
+            icon: None,
             server_url: String::new(),
             bot_email: String::new(),
             api_key_env: "ZULIP_API_KEY".to_string(),
@@ -2168,6 +2280,12 @@ impl Default for ZulipConfig {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(default)]
 pub struct XmppConfig {
+    /// Display name for this channel configuration.
+    #[serde(default)]
+    pub name: Option<String>,
+    /// Icon (emoji or URL) for this channel configuration.
+    #[serde(default)]
+    pub icon: Option<String>,
     /// JID (e.g., "bot@jabber.org").
     pub jid: String,
     /// Env var name holding the password.
@@ -2189,6 +2307,8 @@ pub struct XmppConfig {
 impl Default for XmppConfig {
     fn default() -> Self {
         Self {
+            name: None,
+            icon: None,
             jid: String::new(),
             password_env: "XMPP_PASSWORD".to_string(),
             server: String::new(),
@@ -2206,6 +2326,12 @@ impl Default for XmppConfig {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(default)]
 pub struct LineConfig {
+    /// Display name for this channel configuration.
+    #[serde(default)]
+    pub name: Option<String>,
+    /// Icon (emoji or URL) for this channel configuration.
+    #[serde(default)]
+    pub icon: Option<String>,
     /// Env var name holding the channel secret.
     pub channel_secret_env: String,
     /// Env var name holding the channel access token.
@@ -2222,6 +2348,8 @@ pub struct LineConfig {
 impl Default for LineConfig {
     fn default() -> Self {
         Self {
+            name: None,
+            icon: None,
             channel_secret_env: "LINE_CHANNEL_SECRET".to_string(),
             access_token_env: "LINE_CHANNEL_ACCESS_TOKEN".to_string(),
             webhook_port: 8450,
@@ -2235,6 +2363,12 @@ impl Default for LineConfig {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(default)]
 pub struct ViberConfig {
+    /// Display name for this channel configuration.
+    #[serde(default)]
+    pub name: Option<String>,
+    /// Icon (emoji or URL) for this channel configuration.
+    #[serde(default)]
+    pub icon: Option<String>,
     /// Env var name holding the auth token.
     pub auth_token_env: String,
     /// Webhook URL for receiving messages.
@@ -2251,6 +2385,8 @@ pub struct ViberConfig {
 impl Default for ViberConfig {
     fn default() -> Self {
         Self {
+            name: None,
+            icon: None,
             auth_token_env: "VIBER_AUTH_TOKEN".to_string(),
             webhook_url: String::new(),
             webhook_port: 8451,
@@ -2264,6 +2400,12 @@ impl Default for ViberConfig {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(default)]
 pub struct MessengerConfig {
+    /// Display name for this channel configuration.
+    #[serde(default)]
+    pub name: Option<String>,
+    /// Icon (emoji or URL) for this channel configuration.
+    #[serde(default)]
+    pub icon: Option<String>,
     /// Env var name holding the page access token.
     pub page_token_env: String,
     /// Env var name holding the webhook verify token.
@@ -2280,6 +2422,8 @@ pub struct MessengerConfig {
 impl Default for MessengerConfig {
     fn default() -> Self {
         Self {
+            name: None,
+            icon: None,
             page_token_env: "MESSENGER_PAGE_TOKEN".to_string(),
             verify_token_env: "MESSENGER_VERIFY_TOKEN".to_string(),
             webhook_port: 8452,
@@ -2293,6 +2437,12 @@ impl Default for MessengerConfig {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(default)]
 pub struct RedditConfig {
+    /// Display name for this channel configuration.
+    #[serde(default)]
+    pub name: Option<String>,
+    /// Icon (emoji or URL) for this channel configuration.
+    #[serde(default)]
+    pub icon: Option<String>,
     /// Reddit app client ID.
     pub client_id: String,
     /// Env var name holding the client secret.
@@ -2314,6 +2464,8 @@ pub struct RedditConfig {
 impl Default for RedditConfig {
     fn default() -> Self {
         Self {
+            name: None,
+            icon: None,
             client_id: String::new(),
             client_secret_env: "REDDIT_CLIENT_SECRET".to_string(),
             username: String::new(),
@@ -2329,6 +2481,12 @@ impl Default for RedditConfig {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(default)]
 pub struct MastodonConfig {
+    /// Display name for this channel configuration.
+    #[serde(default)]
+    pub name: Option<String>,
+    /// Icon (emoji or URL) for this channel configuration.
+    #[serde(default)]
+    pub icon: Option<String>,
     /// Mastodon instance URL (e.g., `"https://mastodon.social"`).
     pub instance_url: String,
     /// Env var name holding the access token.
@@ -2343,6 +2501,8 @@ pub struct MastodonConfig {
 impl Default for MastodonConfig {
     fn default() -> Self {
         Self {
+            name: None,
+            icon: None,
             instance_url: String::new(),
             access_token_env: "MASTODON_ACCESS_TOKEN".to_string(),
             default_agent: None,
@@ -2355,6 +2515,12 @@ impl Default for MastodonConfig {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(default)]
 pub struct BlueskyConfig {
+    /// Display name for this channel configuration.
+    #[serde(default)]
+    pub name: Option<String>,
+    /// Icon (emoji or URL) for this channel configuration.
+    #[serde(default)]
+    pub icon: Option<String>,
     /// Bluesky identifier (handle or DID).
     pub identifier: String,
     /// Env var name holding the app password.
@@ -2371,6 +2537,8 @@ pub struct BlueskyConfig {
 impl Default for BlueskyConfig {
     fn default() -> Self {
         Self {
+            name: None,
+            icon: None,
             identifier: String::new(),
             app_password_env: "BLUESKY_APP_PASSWORD".to_string(),
             service_url: "https://bsky.social".to_string(),
@@ -2398,6 +2566,12 @@ pub enum FeishuMode {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(default)]
 pub struct FeishuConfig {
+    /// Display name for this channel configuration.
+    #[serde(default)]
+    pub name: Option<String>,
+    /// Icon (emoji or URL) for this channel configuration.
+    #[serde(default)]
+    pub icon: Option<String>,
     /// Feishu app ID.
     pub app_id: String,
     /// Env var name holding the app secret.
@@ -2427,6 +2601,8 @@ pub struct FeishuConfig {
 impl Default for FeishuConfig {
     fn default() -> Self {
         Self {
+            name: None,
+            icon: None,
             app_id: String::new(),
             app_secret_env: "FEISHU_APP_SECRET".to_string(),
             mode: FeishuMode::Websocket,
@@ -2446,6 +2622,12 @@ impl Default for FeishuConfig {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(default)]
 pub struct WeComConfig {
+    /// Display name for this channel configuration.
+    #[serde(default)]
+    pub name: Option<String>,
+    /// Icon (emoji or URL) for this channel configuration.
+    #[serde(default)]
+    pub icon: Option<String>,
     /// WeCom corp ID.
     pub corp_id: String,
     /// WeCom application agent ID.
@@ -2468,6 +2650,8 @@ pub struct WeComConfig {
 impl Default for WeComConfig {
     fn default() -> Self {
         Self {
+            name: None,
+            icon: None,
             corp_id: String::new(),
             agent_id: String::new(),
             secret_env: "WECOM_SECRET".to_string(),
@@ -2484,6 +2668,12 @@ impl Default for WeComConfig {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(default)]
 pub struct RevoltConfig {
+    /// Display name for this channel configuration.
+    #[serde(default)]
+    pub name: Option<String>,
+    /// Icon (emoji or URL) for this channel configuration.
+    #[serde(default)]
+    pub icon: Option<String>,
     /// Env var name holding the bot token.
     pub bot_token_env: String,
     /// Revolt API URL.
@@ -2498,6 +2688,8 @@ pub struct RevoltConfig {
 impl Default for RevoltConfig {
     fn default() -> Self {
         Self {
+            name: None,
+            icon: None,
             bot_token_env: "REVOLT_BOT_TOKEN".to_string(),
             api_url: "https://api.revolt.chat".to_string(),
             default_agent: None,
@@ -2512,6 +2704,12 @@ impl Default for RevoltConfig {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(default)]
 pub struct NextcloudConfig {
+    /// Display name for this channel configuration.
+    #[serde(default)]
+    pub name: Option<String>,
+    /// Icon (emoji or URL) for this channel configuration.
+    #[serde(default)]
+    pub icon: Option<String>,
     /// Nextcloud server URL.
     pub server_url: String,
     /// Env var name holding the auth token.
@@ -2529,6 +2727,8 @@ pub struct NextcloudConfig {
 impl Default for NextcloudConfig {
     fn default() -> Self {
         Self {
+            name: None,
+            icon: None,
             server_url: String::new(),
             token_env: "NEXTCLOUD_TOKEN".to_string(),
             allowed_rooms: vec![],
@@ -2542,6 +2742,12 @@ impl Default for NextcloudConfig {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(default)]
 pub struct GuildedConfig {
+    /// Display name for this channel configuration.
+    #[serde(default)]
+    pub name: Option<String>,
+    /// Icon (emoji or URL) for this channel configuration.
+    #[serde(default)]
+    pub icon: Option<String>,
     /// Env var name holding the bot token.
     pub bot_token_env: String,
     /// Server IDs to listen in (empty = all).
@@ -2557,6 +2763,8 @@ pub struct GuildedConfig {
 impl Default for GuildedConfig {
     fn default() -> Self {
         Self {
+            name: None,
+            icon: None,
             bot_token_env: "GUILDED_BOT_TOKEN".to_string(),
             server_ids: vec![],
             default_agent: None,
@@ -2569,6 +2777,12 @@ impl Default for GuildedConfig {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(default)]
 pub struct KeybaseConfig {
+    /// Display name for this channel configuration.
+    #[serde(default)]
+    pub name: Option<String>,
+    /// Icon (emoji or URL) for this channel configuration.
+    #[serde(default)]
+    pub icon: Option<String>,
     /// Keybase username.
     pub username: String,
     /// Env var name holding the paper key.
@@ -2586,6 +2800,8 @@ pub struct KeybaseConfig {
 impl Default for KeybaseConfig {
     fn default() -> Self {
         Self {
+            name: None,
+            icon: None,
             username: String::new(),
             paperkey_env: "KEYBASE_PAPERKEY".to_string(),
             allowed_teams: vec![],
@@ -2599,6 +2815,12 @@ impl Default for KeybaseConfig {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(default)]
 pub struct ThreemaConfig {
+    /// Display name for this channel configuration.
+    #[serde(default)]
+    pub name: Option<String>,
+    /// Icon (emoji or URL) for this channel configuration.
+    #[serde(default)]
+    pub icon: Option<String>,
     /// Threema Gateway ID.
     pub threema_id: String,
     /// Env var name holding the API secret.
@@ -2615,6 +2837,8 @@ pub struct ThreemaConfig {
 impl Default for ThreemaConfig {
     fn default() -> Self {
         Self {
+            name: None,
+            icon: None,
             threema_id: String::new(),
             secret_env: "THREEMA_SECRET".to_string(),
             webhook_port: 8454,
@@ -2628,6 +2852,12 @@ impl Default for ThreemaConfig {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(default)]
 pub struct NostrConfig {
+    /// Display name for this channel configuration.
+    #[serde(default)]
+    pub name: Option<String>,
+    /// Icon (emoji or URL) for this channel configuration.
+    #[serde(default)]
+    pub icon: Option<String>,
     /// Env var name holding the private key (nsec or hex).
     pub private_key_env: String,
     /// Relay URLs to connect to.
@@ -2643,6 +2873,8 @@ pub struct NostrConfig {
 impl Default for NostrConfig {
     fn default() -> Self {
         Self {
+            name: None,
+            icon: None,
             private_key_env: "NOSTR_PRIVATE_KEY".to_string(),
             relays: vec!["wss://relay.damus.io".to_string()],
             default_agent: None,
@@ -2655,6 +2887,12 @@ impl Default for NostrConfig {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(default)]
 pub struct WebexConfig {
+    /// Display name for this channel configuration.
+    #[serde(default)]
+    pub name: Option<String>,
+    /// Icon (emoji or URL) for this channel configuration.
+    #[serde(default)]
+    pub icon: Option<String>,
     /// Env var name holding the bot token.
     pub bot_token_env: String,
     /// Room IDs to listen in (empty = all).
@@ -2670,6 +2908,8 @@ pub struct WebexConfig {
 impl Default for WebexConfig {
     fn default() -> Self {
         Self {
+            name: None,
+            icon: None,
             bot_token_env: "WEBEX_BOT_TOKEN".to_string(),
             allowed_rooms: vec![],
             default_agent: None,
@@ -2682,6 +2922,12 @@ impl Default for WebexConfig {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(default)]
 pub struct PumbleConfig {
+    /// Display name for this channel configuration.
+    #[serde(default)]
+    pub name: Option<String>,
+    /// Icon (emoji or URL) for this channel configuration.
+    #[serde(default)]
+    pub icon: Option<String>,
     /// Env var name holding the bot token.
     pub bot_token_env: String,
     /// Port for the incoming webhook.
@@ -2696,6 +2942,8 @@ pub struct PumbleConfig {
 impl Default for PumbleConfig {
     fn default() -> Self {
         Self {
+            name: None,
+            icon: None,
             bot_token_env: "PUMBLE_BOT_TOKEN".to_string(),
             webhook_port: 8455,
             default_agent: None,
@@ -2708,6 +2956,12 @@ impl Default for PumbleConfig {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(default)]
 pub struct FlockConfig {
+    /// Display name for this channel configuration.
+    #[serde(default)]
+    pub name: Option<String>,
+    /// Icon (emoji or URL) for this channel configuration.
+    #[serde(default)]
+    pub icon: Option<String>,
     /// Env var name holding the bot token.
     pub bot_token_env: String,
     /// Port for the incoming webhook.
@@ -2722,6 +2976,8 @@ pub struct FlockConfig {
 impl Default for FlockConfig {
     fn default() -> Self {
         Self {
+            name: None,
+            icon: None,
             bot_token_env: "FLOCK_BOT_TOKEN".to_string(),
             webhook_port: 8456,
             default_agent: None,
@@ -2734,6 +2990,12 @@ impl Default for FlockConfig {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(default)]
 pub struct TwistConfig {
+    /// Display name for this channel configuration.
+    #[serde(default)]
+    pub name: Option<String>,
+    /// Icon (emoji or URL) for this channel configuration.
+    #[serde(default)]
+    pub icon: Option<String>,
     /// Env var name holding the API token.
     pub token_env: String,
     /// Workspace ID.
@@ -2751,6 +3013,8 @@ pub struct TwistConfig {
 impl Default for TwistConfig {
     fn default() -> Self {
         Self {
+            name: None,
+            icon: None,
             token_env: "TWIST_TOKEN".to_string(),
             workspace_id: String::new(),
             allowed_channels: vec![],
@@ -2766,6 +3030,12 @@ impl Default for TwistConfig {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(default)]
 pub struct MumbleConfig {
+    /// Display name for this channel configuration.
+    #[serde(default)]
+    pub name: Option<String>,
+    /// Icon (emoji or URL) for this channel configuration.
+    #[serde(default)]
+    pub icon: Option<String>,
     /// Mumble server hostname.
     pub host: String,
     /// Mumble server port.
@@ -2786,6 +3056,8 @@ pub struct MumbleConfig {
 impl Default for MumbleConfig {
     fn default() -> Self {
         Self {
+            name: None,
+            icon: None,
             host: String::new(),
             port: 64738,
             username: "openfang".to_string(),
@@ -2801,6 +3073,12 @@ impl Default for MumbleConfig {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(default)]
 pub struct DingTalkConfig {
+    /// Display name for this channel configuration.
+    #[serde(default)]
+    pub name: Option<String>,
+    /// Icon (emoji or URL) for this channel configuration.
+    #[serde(default)]
+    pub icon: Option<String>,
     /// Env var name holding the webhook access token.
     pub access_token_env: String,
     /// Env var name holding the signing secret.
@@ -2817,6 +3095,8 @@ pub struct DingTalkConfig {
 impl Default for DingTalkConfig {
     fn default() -> Self {
         Self {
+            name: None,
+            icon: None,
             access_token_env: "DINGTALK_ACCESS_TOKEN".to_string(),
             secret_env: "DINGTALK_SECRET".to_string(),
             webhook_port: 8457,
@@ -2834,6 +3114,12 @@ impl Default for DingTalkConfig {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(default)]
 pub struct DingTalkStreamConfig {
+    /// Display name for this channel configuration.
+    #[serde(default)]
+    pub name: Option<String>,
+    /// Icon (emoji or URL) for this channel configuration.
+    #[serde(default)]
+    pub icon: Option<String>,
     /// Env var holding the App Key (client_id).
     pub app_key_env: String,
     /// Env var holding the App Secret (client_secret).
@@ -2850,6 +3136,8 @@ pub struct DingTalkStreamConfig {
 impl Default for DingTalkStreamConfig {
     fn default() -> Self {
         Self {
+            name: None,
+            icon: None,
             app_key_env: "DINGTALK_APP_KEY".to_string(),
             app_secret_env: "DINGTALK_APP_SECRET".to_string(),
             robot_code_env: "DINGTALK_ROBOT_CODE".to_string(),
@@ -2863,6 +3151,12 @@ impl Default for DingTalkStreamConfig {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(default)]
 pub struct DiscourseConfig {
+    /// Display name for this channel configuration.
+    #[serde(default)]
+    pub name: Option<String>,
+    /// Icon (emoji or URL) for this channel configuration.
+    #[serde(default)]
+    pub icon: Option<String>,
     /// Discourse base URL.
     pub base_url: String,
     /// Env var name holding the API key.
@@ -2882,6 +3176,8 @@ pub struct DiscourseConfig {
 impl Default for DiscourseConfig {
     fn default() -> Self {
         Self {
+            name: None,
+            icon: None,
             base_url: String::new(),
             api_key_env: "DISCOURSE_API_KEY".to_string(),
             api_username: "system".to_string(),
@@ -2896,6 +3192,12 @@ impl Default for DiscourseConfig {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(default)]
 pub struct GitterConfig {
+    /// Display name for this channel configuration.
+    #[serde(default)]
+    pub name: Option<String>,
+    /// Icon (emoji or URL) for this channel configuration.
+    #[serde(default)]
+    pub icon: Option<String>,
     /// Env var name holding the auth token.
     pub token_env: String,
     /// Room ID to listen in.
@@ -2910,6 +3212,8 @@ pub struct GitterConfig {
 impl Default for GitterConfig {
     fn default() -> Self {
         Self {
+            name: None,
+            icon: None,
             token_env: "GITTER_TOKEN".to_string(),
             room_id: String::new(),
             default_agent: None,
@@ -2922,6 +3226,12 @@ impl Default for GitterConfig {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(default)]
 pub struct NtfyConfig {
+    /// Display name for this channel configuration.
+    #[serde(default)]
+    pub name: Option<String>,
+    /// Icon (emoji or URL) for this channel configuration.
+    #[serde(default)]
+    pub icon: Option<String>,
     /// ntfy server URL.
     pub server_url: String,
     /// Topic to subscribe/publish to.
@@ -2938,6 +3248,8 @@ pub struct NtfyConfig {
 impl Default for NtfyConfig {
     fn default() -> Self {
         Self {
+            name: None,
+            icon: None,
             server_url: "https://ntfy.sh".to_string(),
             topic: String::new(),
             token_env: "NTFY_TOKEN".to_string(),
@@ -2951,6 +3263,12 @@ impl Default for NtfyConfig {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(default)]
 pub struct GotifyConfig {
+    /// Display name for this channel configuration.
+    #[serde(default)]
+    pub name: Option<String>,
+    /// Icon (emoji or URL) for this channel configuration.
+    #[serde(default)]
+    pub icon: Option<String>,
     /// Gotify server URL.
     pub server_url: String,
     /// Env var name holding the app token (for sending).
@@ -2967,6 +3285,8 @@ pub struct GotifyConfig {
 impl Default for GotifyConfig {
     fn default() -> Self {
         Self {
+            name: None,
+            icon: None,
             server_url: String::new(),
             app_token_env: "GOTIFY_APP_TOKEN".to_string(),
             client_token_env: "GOTIFY_CLIENT_TOKEN".to_string(),
@@ -2980,6 +3300,12 @@ impl Default for GotifyConfig {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(default)]
 pub struct WebhookConfig {
+    /// Display name for this channel configuration.
+    #[serde(default)]
+    pub name: Option<String>,
+    /// Icon (emoji or URL) for this channel configuration.
+    #[serde(default)]
+    pub icon: Option<String>,
     /// Env var name holding the HMAC signing secret.
     pub secret_env: String,
     /// Port to listen for incoming webhooks.
@@ -2996,6 +3322,8 @@ pub struct WebhookConfig {
 impl Default for WebhookConfig {
     fn default() -> Self {
         Self {
+            name: None,
+            icon: None,
             secret_env: "WEBHOOK_SECRET".to_string(),
             listen_port: 8460,
             callback_url: None,
@@ -3009,6 +3337,12 @@ impl Default for WebhookConfig {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(default)]
 pub struct LinkedInConfig {
+    /// Display name for this channel configuration.
+    #[serde(default)]
+    pub name: Option<String>,
+    /// Icon (emoji or URL) for this channel configuration.
+    #[serde(default)]
+    pub icon: Option<String>,
     /// Env var name holding the OAuth2 access token.
     pub access_token_env: String,
     /// Organization ID for messaging.
@@ -3023,6 +3357,8 @@ pub struct LinkedInConfig {
 impl Default for LinkedInConfig {
     fn default() -> Self {
         Self {
+            name: None,
+            icon: None,
             access_token_env: "LINKEDIN_ACCESS_TOKEN".to_string(),
             organization_id: String::new(),
             default_agent: None,
@@ -3038,7 +3374,7 @@ impl KernelConfig {
     pub fn validate(&self) -> Vec<String> {
         let mut warnings = Vec::new();
 
-        if let Some(ref tg) = self.channels.telegram {
+        for tg in &self.channels.telegram {
             if std::env::var(&tg.bot_token_env)
                 .unwrap_or_default()
                 .is_empty()
@@ -3049,7 +3385,7 @@ impl KernelConfig {
                 ));
             }
         }
-        if let Some(ref dc) = self.channels.discord {
+        for dc in &self.channels.discord {
             if std::env::var(&dc.bot_token_env)
                 .unwrap_or_default()
                 .is_empty()
@@ -3060,7 +3396,7 @@ impl KernelConfig {
                 ));
             }
         }
-        if let Some(ref sl) = self.channels.slack {
+        for sl in &self.channels.slack {
             if std::env::var(&sl.app_token_env)
                 .unwrap_or_default()
                 .is_empty()
@@ -3080,7 +3416,7 @@ impl KernelConfig {
                 ));
             }
         }
-        if let Some(ref wa) = self.channels.whatsapp {
+        for wa in &self.channels.whatsapp {
             if std::env::var(&wa.access_token_env)
                 .unwrap_or_default()
                 .is_empty()
@@ -3091,7 +3427,7 @@ impl KernelConfig {
                 ));
             }
         }
-        if let Some(ref mx) = self.channels.matrix {
+        for mx in &self.channels.matrix {
             if std::env::var(&mx.access_token_env)
                 .unwrap_or_default()
                 .is_empty()
@@ -3102,7 +3438,7 @@ impl KernelConfig {
                 ));
             }
         }
-        if let Some(ref em) = self.channels.email {
+        for em in &self.channels.email {
             if std::env::var(&em.password_env)
                 .unwrap_or_default()
                 .is_empty()
@@ -3113,7 +3449,7 @@ impl KernelConfig {
                 ));
             }
         }
-        if let Some(ref t) = self.channels.teams {
+        for t in &self.channels.teams {
             if std::env::var(&t.app_password_env)
                 .unwrap_or_default()
                 .is_empty()
@@ -3124,7 +3460,7 @@ impl KernelConfig {
                 ));
             }
         }
-        if let Some(ref m) = self.channels.mattermost {
+        for m in &self.channels.mattermost {
             if std::env::var(&m.token_env).unwrap_or_default().is_empty() {
                 warnings.push(format!(
                     "Mattermost configured but {} is not set",
@@ -3132,12 +3468,12 @@ impl KernelConfig {
                 ));
             }
         }
-        if let Some(ref z) = self.channels.zulip {
+        for z in &self.channels.zulip {
             if std::env::var(&z.api_key_env).unwrap_or_default().is_empty() {
                 warnings.push(format!("Zulip configured but {} is not set", z.api_key_env));
             }
         }
-        if let Some(ref tw) = self.channels.twitch {
+        for tw in &self.channels.twitch {
             if std::env::var(&tw.oauth_token_env)
                 .unwrap_or_default()
                 .is_empty()
@@ -3148,7 +3484,7 @@ impl KernelConfig {
                 ));
             }
         }
-        if let Some(ref rc) = self.channels.rocketchat {
+        for rc in &self.channels.rocketchat {
             if std::env::var(&rc.token_env).unwrap_or_default().is_empty() {
                 warnings.push(format!(
                     "Rocket.Chat configured but {} is not set",
@@ -3156,7 +3492,7 @@ impl KernelConfig {
                 ));
             }
         }
-        if let Some(ref gc) = self.channels.google_chat {
+        for gc in &self.channels.google_chat {
             if std::env::var(&gc.service_account_env)
                 .unwrap_or_default()
                 .is_empty()
@@ -3167,7 +3503,7 @@ impl KernelConfig {
                 ));
             }
         }
-        if let Some(ref x) = self.channels.xmpp {
+        for x in &self.channels.xmpp {
             if std::env::var(&x.password_env)
                 .unwrap_or_default()
                 .is_empty()
@@ -3175,8 +3511,7 @@ impl KernelConfig {
                 warnings.push(format!("XMPP configured but {} is not set", x.password_env));
             }
         }
-        // Wave 3 channels
-        if let Some(ref ln) = self.channels.line {
+        for ln in &self.channels.line {
             if std::env::var(&ln.access_token_env)
                 .unwrap_or_default()
                 .is_empty()
@@ -3187,7 +3522,7 @@ impl KernelConfig {
                 ));
             }
         }
-        if let Some(ref vb) = self.channels.viber {
+        for vb in &self.channels.viber {
             if std::env::var(&vb.auth_token_env)
                 .unwrap_or_default()
                 .is_empty()
@@ -3198,7 +3533,7 @@ impl KernelConfig {
                 ));
             }
         }
-        if let Some(ref ms) = self.channels.messenger {
+        for ms in &self.channels.messenger {
             if std::env::var(&ms.page_token_env)
                 .unwrap_or_default()
                 .is_empty()
@@ -3209,7 +3544,7 @@ impl KernelConfig {
                 ));
             }
         }
-        if let Some(ref rd) = self.channels.reddit {
+        for rd in &self.channels.reddit {
             if std::env::var(&rd.client_secret_env)
                 .unwrap_or_default()
                 .is_empty()
@@ -3220,7 +3555,7 @@ impl KernelConfig {
                 ));
             }
         }
-        if let Some(ref md) = self.channels.mastodon {
+        for md in &self.channels.mastodon {
             if std::env::var(&md.access_token_env)
                 .unwrap_or_default()
                 .is_empty()
@@ -3231,7 +3566,7 @@ impl KernelConfig {
                 ));
             }
         }
-        if let Some(ref bs) = self.channels.bluesky {
+        for bs in &self.channels.bluesky {
             if std::env::var(&bs.app_password_env)
                 .unwrap_or_default()
                 .is_empty()
@@ -3242,7 +3577,7 @@ impl KernelConfig {
                 ));
             }
         }
-        if let Some(ref fs) = self.channels.feishu {
+        for fs in &self.channels.feishu {
             if std::env::var(&fs.app_secret_env)
                 .unwrap_or_default()
                 .is_empty()
@@ -3253,7 +3588,7 @@ impl KernelConfig {
                 ));
             }
         }
-        if let Some(ref rv) = self.channels.revolt {
+        for rv in &self.channels.revolt {
             if std::env::var(&rv.bot_token_env)
                 .unwrap_or_default()
                 .is_empty()
@@ -3264,8 +3599,7 @@ impl KernelConfig {
                 ));
             }
         }
-        // Wave 4 channels
-        if let Some(ref nc) = self.channels.nextcloud {
+        for nc in &self.channels.nextcloud {
             if std::env::var(&nc.token_env).unwrap_or_default().is_empty() {
                 warnings.push(format!(
                     "Nextcloud configured but {} is not set",
@@ -3273,7 +3607,7 @@ impl KernelConfig {
                 ));
             }
         }
-        if let Some(ref gd) = self.channels.guilded {
+        for gd in &self.channels.guilded {
             if std::env::var(&gd.bot_token_env)
                 .unwrap_or_default()
                 .is_empty()
@@ -3284,7 +3618,7 @@ impl KernelConfig {
                 ));
             }
         }
-        if let Some(ref kb) = self.channels.keybase {
+        for kb in &self.channels.keybase {
             if std::env::var(&kb.paperkey_env)
                 .unwrap_or_default()
                 .is_empty()
@@ -3295,7 +3629,7 @@ impl KernelConfig {
                 ));
             }
         }
-        if let Some(ref tm) = self.channels.threema {
+        for tm in &self.channels.threema {
             if std::env::var(&tm.secret_env).unwrap_or_default().is_empty() {
                 warnings.push(format!(
                     "Threema configured but {} is not set",
@@ -3303,7 +3637,7 @@ impl KernelConfig {
                 ));
             }
         }
-        if let Some(ref ns) = self.channels.nostr {
+        for ns in &self.channels.nostr {
             if std::env::var(&ns.private_key_env)
                 .unwrap_or_default()
                 .is_empty()
@@ -3314,7 +3648,7 @@ impl KernelConfig {
                 ));
             }
         }
-        if let Some(ref wx) = self.channels.webex {
+        for wx in &self.channels.webex {
             if std::env::var(&wx.bot_token_env)
                 .unwrap_or_default()
                 .is_empty()
@@ -3325,7 +3659,7 @@ impl KernelConfig {
                 ));
             }
         }
-        if let Some(ref pb) = self.channels.pumble {
+        for pb in &self.channels.pumble {
             if std::env::var(&pb.bot_token_env)
                 .unwrap_or_default()
                 .is_empty()
@@ -3336,7 +3670,7 @@ impl KernelConfig {
                 ));
             }
         }
-        if let Some(ref fl) = self.channels.flock {
+        for fl in &self.channels.flock {
             if std::env::var(&fl.bot_token_env)
                 .unwrap_or_default()
                 .is_empty()
@@ -3347,13 +3681,12 @@ impl KernelConfig {
                 ));
             }
         }
-        if let Some(ref tw) = self.channels.twist {
+        for tw in &self.channels.twist {
             if std::env::var(&tw.token_env).unwrap_or_default().is_empty() {
                 warnings.push(format!("Twist configured but {} is not set", tw.token_env));
             }
         }
-        // Wave 5 channels
-        if let Some(ref mb) = self.channels.mumble {
+        for mb in &self.channels.mumble {
             if std::env::var(&mb.password_env)
                 .unwrap_or_default()
                 .is_empty()
@@ -3364,7 +3697,7 @@ impl KernelConfig {
                 ));
             }
         }
-        if let Some(ref dt) = self.channels.dingtalk {
+        for dt in &self.channels.dingtalk {
             if std::env::var(&dt.access_token_env)
                 .unwrap_or_default()
                 .is_empty()
@@ -3375,7 +3708,7 @@ impl KernelConfig {
                 ));
             }
         }
-        if let Some(ref ds) = self.channels.dingtalk_stream {
+        for ds in &self.channels.dingtalk_stream {
             if std::env::var(&ds.app_key_env)
                 .unwrap_or_default()
                 .is_empty()
@@ -3395,7 +3728,7 @@ impl KernelConfig {
                 ));
             }
         }
-        if let Some(ref dc) = self.channels.discourse {
+        for dc in &self.channels.discourse {
             if std::env::var(&dc.api_key_env)
                 .unwrap_or_default()
                 .is_empty()
@@ -3406,19 +3739,19 @@ impl KernelConfig {
                 ));
             }
         }
-        if let Some(ref gt) = self.channels.gitter {
+        for gt in &self.channels.gitter {
             if std::env::var(&gt.token_env).unwrap_or_default().is_empty() {
                 warnings.push(format!("Gitter configured but {} is not set", gt.token_env));
             }
         }
-        if let Some(ref nf) = self.channels.ntfy {
+        for nf in &self.channels.ntfy {
             if !nf.token_env.is_empty()
                 && std::env::var(&nf.token_env).unwrap_or_default().is_empty()
             {
                 warnings.push(format!("ntfy configured but {} is not set", nf.token_env));
             }
         }
-        if let Some(ref gf) = self.channels.gotify {
+        for gf in &self.channels.gotify {
             if std::env::var(&gf.app_token_env)
                 .unwrap_or_default()
                 .is_empty()
@@ -3429,7 +3762,7 @@ impl KernelConfig {
                 ));
             }
         }
-        if let Some(ref wh) = self.channels.webhook {
+        for wh in &self.channels.webhook {
             if std::env::var(&wh.secret_env).unwrap_or_default().is_empty() {
                 warnings.push(format!(
                     "Webhook configured but {} is not set",
@@ -3437,7 +3770,7 @@ impl KernelConfig {
                 ));
             }
         }
-        if let Some(ref li) = self.channels.linkedin {
+        for li in &self.channels.linkedin {
             if std::env::var(&li.access_token_env)
                 .unwrap_or_default()
                 .is_empty()
@@ -3446,6 +3779,11 @@ impl KernelConfig {
                     "LinkedIn configured but {} is not set",
                     li.access_token_env
                 ));
+            }
+        }
+        for wc in &self.channels.wecom {
+            if std::env::var(&wc.secret_env).unwrap_or_default().is_empty() {
+                warnings.push(format!("WeCom configured but {} is not set", wc.secret_env));
             }
         }
 
@@ -3635,10 +3973,10 @@ mod tests {
     #[test]
     fn test_validate_missing_env_vars() {
         let mut config = KernelConfig::default();
-        config.channels.discord = Some(DiscordConfig {
+        config.channels.discord = vec![DiscordConfig {
             bot_token_env: "OPENFANG_TEST_NONEXISTENT_VAR_DC".to_string(),
             ..Default::default()
-        });
+        }];
         let warnings = config.validate();
         assert_eq!(warnings.len(), 1);
         assert!(warnings[0].contains("Discord"));
@@ -3702,18 +4040,18 @@ mod tests {
     fn test_channels_config_with_new_channels() {
         let config = KernelConfig {
             channels: ChannelsConfig {
-                whatsapp: Some(WhatsAppConfig::default()),
-                signal: Some(SignalConfig::default()),
-                matrix: Some(MatrixConfig::default()),
-                email: Some(EmailConfig::default()),
+                whatsapp: vec![WhatsAppConfig::default()],
+                signal: vec![SignalConfig::default()],
+                matrix: vec![MatrixConfig::default()],
+                email: vec![EmailConfig::default()],
                 ..Default::default()
             },
             ..Default::default()
         };
-        assert!(config.channels.whatsapp.is_some());
-        assert!(config.channels.signal.is_some());
-        assert!(config.channels.matrix.is_some());
-        assert!(config.channels.email.is_some());
+        assert!(config.channels.whatsapp.is_empty());
+        assert!(config.channels.signal.is_empty());
+        assert!(config.channels.matrix.is_empty());
+        assert!(config.channels.email.is_empty());
     }
 
     #[test]
@@ -3780,28 +4118,28 @@ mod tests {
     fn test_all_new_channel_configs_serde() {
         let config = KernelConfig {
             channels: ChannelsConfig {
-                teams: Some(TeamsConfig::default()),
-                mattermost: Some(MattermostConfig::default()),
-                irc: Some(IrcConfig::default()),
-                google_chat: Some(GoogleChatConfig::default()),
-                twitch: Some(TwitchConfig::default()),
-                rocketchat: Some(RocketChatConfig::default()),
-                zulip: Some(ZulipConfig::default()),
-                xmpp: Some(XmppConfig::default()),
+                teams: vec![TeamsConfig::default()],
+                mattermost: vec![MattermostConfig::default()],
+                irc: vec![IrcConfig::default()],
+                google_chat: vec![GoogleChatConfig::default()],
+                twitch: vec![TwitchConfig::default()],
+                rocketchat: vec![RocketChatConfig::default()],
+                zulip: vec![ZulipConfig::default()],
+                xmpp: vec![XmppConfig::default()],
                 ..Default::default()
             },
             ..Default::default()
         };
         let toml_str = toml::to_string_pretty(&config).unwrap();
         let back: KernelConfig = toml::from_str(&toml_str).unwrap();
-        assert!(back.channels.teams.is_some());
-        assert!(back.channels.mattermost.is_some());
-        assert!(back.channels.irc.is_some());
-        assert!(back.channels.google_chat.is_some());
-        assert!(back.channels.twitch.is_some());
-        assert!(back.channels.rocketchat.is_some());
-        assert!(back.channels.zulip.is_some());
-        assert!(back.channels.xmpp.is_some());
+        assert!(back.channels.teams.is_empty());
+        assert!(back.channels.mattermost.is_empty());
+        assert!(back.channels.irc.is_empty());
+        assert!(back.channels.google_chat.is_empty());
+        assert!(back.channels.twitch.is_empty());
+        assert!(back.channels.rocketchat.is_empty());
+        assert!(back.channels.zulip.is_empty());
+        assert!(back.channels.xmpp.is_empty());
     }
 
     #[test]
@@ -3943,25 +4281,25 @@ mod tests {
     #[test]
     fn test_feishu_mode_defaults_to_websocket() {
         let toml_str = r#"
-            [channels.feishu]
+            [[channels.feishu]]
             app_id = "cli_test"
             app_secret_env = "FEISHU_APP_SECRET"
         "#;
         let config: KernelConfig = toml::from_str(toml_str).unwrap();
-        let feishu = config.channels.feishu.unwrap();
+        let feishu = &config.channels.feishu[0];
         assert_eq!(feishu.mode, FeishuMode::Websocket);
     }
 
     #[test]
     fn test_feishu_mode_parses_websocket() {
         let toml_str = r#"
-            [channels.feishu]
+            [[channels.feishu]]
             app_id = "cli_test"
             app_secret_env = "FEISHU_APP_SECRET"
             mode = "websocket"
         "#;
         let config: KernelConfig = toml::from_str(toml_str).unwrap();
-        let feishu = config.channels.feishu.unwrap();
+        let feishu = &config.channels.feishu[0];
         assert_eq!(feishu.mode, FeishuMode::Websocket);
     }
 

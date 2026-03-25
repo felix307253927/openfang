@@ -1399,6 +1399,8 @@ pub async fn run_agent_loop_streaming(
         // Strip provider prefix: "openrouter/google/gemini-2.5-flash" → "google/gemini-2.5-flash"
         let api_model = strip_provider_prefix(&manifest.model.model, &manifest.model.provider);
 
+        tracing::debug!("Request messages: {:?}", messages);
+
         let request = CompletionRequest {
             model: api_model,
             messages: messages.clone(),

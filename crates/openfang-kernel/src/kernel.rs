@@ -4246,7 +4246,7 @@ impl OpenFangKernel {
         }
 
         // Start WhatsApp Web gateway if WhatsApp channel is configured
-        if self.config.channels.whatsapp.is_some() {
+        if !self.config.channels.whatsapp.is_empty() {
             let kernel = Arc::clone(self);
             tokio::spawn(async move {
                 crate::whatsapp_gateway::start_whatsapp_gateway(&kernel).await;
@@ -6173,14 +6173,14 @@ impl KernelHandle for OpenFangKernel {
                 .config
                 .channels
                 .telegram
-                .as_ref()?
+                .first()?
                 .default_chat_id
                 .clone(),
             "discord" => self
                 .config
                 .channels
                 .discord
-                .as_ref()?
+                .first()?
                 .default_channel_id
                 .clone(),
             _ => None,
@@ -6221,7 +6221,7 @@ impl KernelHandle for OpenFangKernel {
                 .config
                 .channels
                 .wecom
-                .as_ref()
+                .first()
                 .and_then(|c| c.overrides.output_format)
                 .unwrap_or(OutputFormat::PlainText);
             openfang_channels::formatter::format_for_wecom(message, output_format)

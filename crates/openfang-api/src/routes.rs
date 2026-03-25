@@ -1573,7 +1573,7 @@ const CHANNEL_REGISTRY: &[ChannelMeta] = &[
             ChannelField { key: "poll_interval_secs", label: "Poll Interval (sec)", field_type: FieldType::Number, env_var: None, required: false, placeholder: "1", advanced: true },
         ],
         setup_steps: &["Open @BotFather on Telegram", "Send /newbot and follow the prompts", "Paste the token below"],
-        config_template: "[channels.telegram]\nbot_token_env = \"TELEGRAM_BOT_TOKEN\"",
+        config_template: "[[channels.telegram]]\nbot_token_env = \"TELEGRAM_BOT_TOKEN\"",
     },
     ChannelMeta {
         name: "discord", display_name: "Discord", icon: "DC",
@@ -1589,7 +1589,7 @@ const CHANNEL_REGISTRY: &[ChannelMeta] = &[
             ChannelField { key: "intents", label: "Intents Bitmask", field_type: FieldType::Number, env_var: None, required: false, placeholder: "37376", advanced: true },
         ],
         setup_steps: &["Go to discord.com/developers/applications", "Create a bot and copy the token", "Paste it below"],
-        config_template: "[channels.discord]\nbot_token_env = \"DISCORD_BOT_TOKEN\"",
+        config_template: "[[channels.discord]]\nbot_token_env = \"DISCORD_BOT_TOKEN\"",
     },
     ChannelMeta {
         name: "slack", display_name: "Slack", icon: "SL",
@@ -1621,7 +1621,7 @@ const CHANNEL_REGISTRY: &[ChannelMeta] = &[
             ChannelField { key: "default_agent", label: "Default Agent", field_type: FieldType::Text, env_var: None, required: false, placeholder: "assistant", advanced: true },
         ],
         setup_steps: &["Open WhatsApp on your phone", "Go to Linked Devices", "Tap Link a Device and scan the QR code"],
-        config_template: "[channels.whatsapp]\naccess_token_env = \"WHATSAPP_ACCESS_TOKEN\"\nphone_number_id = \"\"",
+        config_template: "[[channels.whatsapp]]\naccess_token_env = \"WHATSAPP_ACCESS_TOKEN\"\nphone_number_id = \"\"",
     },
     ChannelMeta {
         name: "signal", display_name: "Signal", icon: "SG",
@@ -1651,7 +1651,7 @@ const CHANNEL_REGISTRY: &[ChannelMeta] = &[
             ChannelField { key: "default_agent", label: "Default Agent", field_type: FieldType::Text, env_var: None, required: false, placeholder: "assistant", advanced: true },
         ],
         setup_steps: &["Create a bot account on your homeserver", "Generate an access token", "Paste token and homeserver URL below"],
-        config_template: "[channels.matrix]\naccess_token_env = \"MATRIX_ACCESS_TOKEN\"\nhomeserver_url = \"https://matrix.org\"",
+        config_template: "[[channels.matrix]]\naccess_token_env = \"MATRIX_ACCESS_TOKEN\"\nhomeserver_url = \"https://matrix.org\"",
     },
     ChannelMeta {
         name: "email", display_name: "Email", icon: "EM",
@@ -1669,7 +1669,7 @@ const CHANNEL_REGISTRY: &[ChannelMeta] = &[
             ChannelField { key: "default_agent", label: "Default Agent", field_type: FieldType::Text, env_var: None, required: false, placeholder: "assistant", advanced: true },
         ],
         setup_steps: &["Enable IMAP on your email account", "Generate an app password if using Gmail", "Fill in email, password, and hosts below"],
-        config_template: "[channels.email]\nimap_host = \"imap.gmail.com\"\nsmtp_host = \"smtp.gmail.com\"\npassword_env = \"EMAIL_PASSWORD\"",
+        config_template: "[[channels.email]]\nimap_host = \"imap.gmail.com\"\nsmtp_host = \"smtp.gmail.com\"\npassword_env = \"EMAIL_PASSWORD\"",
     },
     ChannelMeta {
         name: "line", display_name: "LINE", icon: "LN",
@@ -1699,7 +1699,7 @@ const CHANNEL_REGISTRY: &[ChannelMeta] = &[
             ChannelField { key: "default_agent", label: "Default Agent", field_type: FieldType::Text, env_var: None, required: false, placeholder: "assistant", advanced: true },
         ],
         setup_steps: &["Create a bot at partners.viber.com", "Copy the auth token", "Paste it below"],
-        config_template: "[channels.viber]\nauth_token_env = \"VIBER_AUTH_TOKEN\"",
+        config_template: "[[channels.viber]]\nauth_token_env = \"VIBER_AUTH_TOKEN\"",
     },
     ChannelMeta {
         name: "messenger", display_name: "Messenger", icon: "FB",
@@ -1744,7 +1744,7 @@ const CHANNEL_REGISTRY: &[ChannelMeta] = &[
             ChannelField { key: "default_agent", label: "Default Agent", field_type: FieldType::Text, env_var: None, required: false, placeholder: "assistant", advanced: true },
         ],
         setup_steps: &["Create a Keybase bot account", "Generate a paper key", "Enter username and paper key below"],
-        config_template: "[channels.keybase]\nusername = \"\"\npaperkey_env = \"KEYBASE_PAPERKEY\"",
+        config_template: "[[channels.keybase]]\nusername = \"\"\npaperkey_env = \"KEYBASE_PAPERKEY\"",
     },
     // ── Social (5) ──────────────────────────────────────────────────
     ChannelMeta {
@@ -1776,7 +1776,7 @@ const CHANNEL_REGISTRY: &[ChannelMeta] = &[
             ChannelField { key: "default_agent", label: "Default Agent", field_type: FieldType::Text, env_var: None, required: false, placeholder: "assistant", advanced: true },
         ],
         setup_steps: &["Go to Settings > Development on your instance", "Create an app and copy the token", "Paste it below"],
-        config_template: "[channels.mastodon]\ninstance_url = \"https://mastodon.social\"\naccess_token_env = \"MASTODON_ACCESS_TOKEN\"",
+        config_template: "[[channels.mastodon]]\ninstance_url = \"https://mastodon.social\"\naccess_token_env = \"MASTODON_ACCESS_TOKEN\"",
     },
     ChannelMeta {
         name: "bluesky", display_name: "Bluesky", icon: "BS",
@@ -1805,7 +1805,7 @@ const CHANNEL_REGISTRY: &[ChannelMeta] = &[
             ChannelField { key: "default_agent", label: "Default Agent", field_type: FieldType::Text, env_var: None, required: false, placeholder: "assistant", advanced: true },
         ],
         setup_steps: &["Create a LinkedIn App at linkedin.com/developers", "Generate an OAuth2 token", "Enter token and org ID below"],
-        config_template: "[channels.linkedin]\naccess_token_env = \"LINKEDIN_ACCESS_TOKEN\"\norganization_id = \"\"",
+        config_template: "[[channels.linkedin]]\naccess_token_env = \"LINKEDIN_ACCESS_TOKEN\"\norganization_id = \"\"",
     },
     ChannelMeta {
         name: "nostr", display_name: "Nostr", icon: "NS",
@@ -2213,51 +2213,51 @@ const CHANNEL_REGISTRY: &[ChannelMeta] = &[
     },
 ];
 
-/// Check if a channel is configured (has a `[channels.xxx]` section in config).
+/// Check if a channel is configured (has a `[[channels.xxx]]` section in config).
 fn is_channel_configured(config: &openfang_types::config::ChannelsConfig, name: &str) -> bool {
     match name {
-        "telegram" => config.telegram.is_some(),
-        "discord" => config.discord.is_some(),
-        "slack" => config.slack.is_some(),
-        "whatsapp" => config.whatsapp.is_some(),
-        "signal" => config.signal.is_some(),
-        "matrix" => config.matrix.is_some(),
-        "email" => config.email.is_some(),
-        "line" => config.line.is_some(),
-        "viber" => config.viber.is_some(),
-        "messenger" => config.messenger.is_some(),
-        "threema" => config.threema.is_some(),
-        "keybase" => config.keybase.is_some(),
-        "reddit" => config.reddit.is_some(),
-        "mastodon" => config.mastodon.is_some(),
-        "bluesky" => config.bluesky.is_some(),
-        "linkedin" => config.linkedin.is_some(),
-        "nostr" => config.nostr.is_some(),
-        "teams" => config.teams.is_some(),
-        "mattermost" => config.mattermost.is_some(),
-        "google_chat" => config.google_chat.is_some(),
-        "webex" => config.webex.is_some(),
-        "feishu" => config.feishu.is_some(),
-        "dingtalk" => config.dingtalk.is_some(),
-        "dingtalk_stream" => config.dingtalk_stream.is_some(),
-        "pumble" => config.pumble.is_some(),
-        "flock" => config.flock.is_some(),
-        "twist" => config.twist.is_some(),
-        "zulip" => config.zulip.is_some(),
-        "irc" => config.irc.is_some(),
-        "xmpp" => config.xmpp.is_some(),
-        "gitter" => config.gitter.is_some(),
-        "discourse" => config.discourse.is_some(),
-        "revolt" => config.revolt.is_some(),
-        "guilded" => config.guilded.is_some(),
-        "nextcloud" => config.nextcloud.is_some(),
-        "rocketchat" => config.rocketchat.is_some(),
-        "twitch" => config.twitch.is_some(),
-        "ntfy" => config.ntfy.is_some(),
-        "gotify" => config.gotify.is_some(),
-        "webhook" => config.webhook.is_some(),
-        "mumble" => config.mumble.is_some(),
-        "wecom" => config.wecom.is_some(),
+        "telegram" => !config.telegram.is_empty(),
+        "discord" => !config.discord.is_empty(),
+        "slack" => !config.slack.is_empty(),
+        "whatsapp" => !config.whatsapp.is_empty(),
+        "signal" => !config.signal.is_empty(),
+        "matrix" => !config.matrix.is_empty(),
+        "email" => !config.email.is_empty(),
+        "line" => !config.line.is_empty(),
+        "viber" => !config.viber.is_empty(),
+        "messenger" => !config.messenger.is_empty(),
+        "threema" => !config.threema.is_empty(),
+        "keybase" => !config.keybase.is_empty(),
+        "reddit" => !config.reddit.is_empty(),
+        "mastodon" => !config.mastodon.is_empty(),
+        "bluesky" => !config.bluesky.is_empty(),
+        "linkedin" => !config.linkedin.is_empty(),
+        "nostr" => !config.nostr.is_empty(),
+        "teams" => !config.teams.is_empty(),
+        "mattermost" => !config.mattermost.is_empty(),
+        "google_chat" => !config.google_chat.is_empty(),
+        "webex" => !config.webex.is_empty(),
+        "feishu" => !config.feishu.is_empty(),
+        "dingtalk" => !config.dingtalk.is_empty(),
+        "dingtalk_stream" => !config.dingtalk_stream.is_empty(),
+        "pumble" => !config.pumble.is_empty(),
+        "flock" => !config.flock.is_empty(),
+        "twist" => !config.twist.is_empty(),
+        "zulip" => !config.zulip.is_empty(),
+        "irc" => !config.irc.is_empty(),
+        "xmpp" => !config.xmpp.is_empty(),
+        "gitter" => !config.gitter.is_empty(),
+        "discourse" => !config.discourse.is_empty(),
+        "revolt" => !config.revolt.is_empty(),
+        "guilded" => !config.guilded.is_empty(),
+        "nextcloud" => !config.nextcloud.is_empty(),
+        "rocketchat" => !config.rocketchat.is_empty(),
+        "twitch" => !config.twitch.is_empty(),
+        "ntfy" => !config.ntfy.is_empty(),
+        "gotify" => !config.gotify.is_empty(),
+        "webhook" => !config.webhook.is_empty(),
+        "mumble" => !config.mumble.is_empty(),
+        "wecom" => !config.wecom.is_empty(),
         _ => false,
     }
 }
@@ -2346,163 +2346,167 @@ fn channel_config_values(
     match name {
         "telegram" => config
             .telegram
-            .as_ref()
+            .first()
             .and_then(|c| serde_json::to_value(c).ok()),
         "discord" => config
             .discord
-            .as_ref()
+            .first()
             .and_then(|c| serde_json::to_value(c).ok()),
         "slack" => config
             .slack
-            .as_ref()
+            .first()
             .and_then(|c| serde_json::to_value(c).ok()),
         "whatsapp" => config
             .whatsapp
-            .as_ref()
+            .first()
             .and_then(|c| serde_json::to_value(c).ok()),
         "signal" => config
             .signal
-            .as_ref()
+            .first()
             .and_then(|c| serde_json::to_value(c).ok()),
         "matrix" => config
             .matrix
-            .as_ref()
+            .first()
             .and_then(|c| serde_json::to_value(c).ok()),
         "email" => config
             .email
-            .as_ref()
+            .first()
             .and_then(|c| serde_json::to_value(c).ok()),
         "teams" => config
             .teams
-            .as_ref()
+            .first()
             .and_then(|c| serde_json::to_value(c).ok()),
         "mattermost" => config
             .mattermost
-            .as_ref()
+            .first()
             .and_then(|c| serde_json::to_value(c).ok()),
         "irc" => config
             .irc
-            .as_ref()
+            .first()
             .and_then(|c| serde_json::to_value(c).ok()),
         "google_chat" => config
             .google_chat
-            .as_ref()
+            .first()
             .and_then(|c| serde_json::to_value(c).ok()),
         "twitch" => config
             .twitch
-            .as_ref()
+            .first()
             .and_then(|c| serde_json::to_value(c).ok()),
         "rocketchat" => config
             .rocketchat
-            .as_ref()
+            .first()
             .and_then(|c| serde_json::to_value(c).ok()),
         "zulip" => config
             .zulip
-            .as_ref()
+            .first()
             .and_then(|c| serde_json::to_value(c).ok()),
         "xmpp" => config
             .xmpp
-            .as_ref()
+            .first()
             .and_then(|c| serde_json::to_value(c).ok()),
         "line" => config
             .line
-            .as_ref()
+            .first()
             .and_then(|c| serde_json::to_value(c).ok()),
         "viber" => config
             .viber
-            .as_ref()
+            .first()
             .and_then(|c| serde_json::to_value(c).ok()),
         "messenger" => config
             .messenger
-            .as_ref()
+            .first()
             .and_then(|c| serde_json::to_value(c).ok()),
         "reddit" => config
             .reddit
-            .as_ref()
+            .first()
             .and_then(|c| serde_json::to_value(c).ok()),
         "mastodon" => config
             .mastodon
-            .as_ref()
+            .first()
             .and_then(|c| serde_json::to_value(c).ok()),
         "bluesky" => config
             .bluesky
-            .as_ref()
+            .first()
             .and_then(|c| serde_json::to_value(c).ok()),
         "feishu" => config
             .feishu
-            .as_ref()
+            .first()
             .and_then(|c| serde_json::to_value(c).ok()),
         "revolt" => config
             .revolt
-            .as_ref()
+            .first()
             .and_then(|c| serde_json::to_value(c).ok()),
         "nextcloud" => config
             .nextcloud
-            .as_ref()
+            .first()
             .and_then(|c| serde_json::to_value(c).ok()),
         "guilded" => config
             .guilded
-            .as_ref()
+            .first()
             .and_then(|c| serde_json::to_value(c).ok()),
         "keybase" => config
             .keybase
-            .as_ref()
+            .first()
             .and_then(|c| serde_json::to_value(c).ok()),
         "threema" => config
             .threema
-            .as_ref()
+            .first()
             .and_then(|c| serde_json::to_value(c).ok()),
         "nostr" => config
             .nostr
-            .as_ref()
+            .first()
             .and_then(|c| serde_json::to_value(c).ok()),
         "webex" => config
             .webex
-            .as_ref()
+            .first()
             .and_then(|c| serde_json::to_value(c).ok()),
         "pumble" => config
             .pumble
-            .as_ref()
+            .first()
             .and_then(|c| serde_json::to_value(c).ok()),
         "flock" => config
             .flock
-            .as_ref()
+            .first()
             .and_then(|c| serde_json::to_value(c).ok()),
         "twist" => config
             .twist
-            .as_ref()
+            .first()
             .and_then(|c| serde_json::to_value(c).ok()),
         "mumble" => config
             .mumble
-            .as_ref()
+            .first()
             .and_then(|c| serde_json::to_value(c).ok()),
         "dingtalk" => config
             .dingtalk
-            .as_ref()
+            .first()
             .and_then(|c| serde_json::to_value(c).ok()),
         "discourse" => config
             .discourse
-            .as_ref()
+            .first()
             .and_then(|c| serde_json::to_value(c).ok()),
         "gitter" => config
             .gitter
-            .as_ref()
+            .first()
             .and_then(|c| serde_json::to_value(c).ok()),
         "ntfy" => config
             .ntfy
-            .as_ref()
+            .first()
             .and_then(|c| serde_json::to_value(c).ok()),
         "gotify" => config
             .gotify
-            .as_ref()
+            .first()
             .and_then(|c| serde_json::to_value(c).ok()),
         "webhook" => config
             .webhook
-            .as_ref()
+            .first()
             .and_then(|c| serde_json::to_value(c).ok()),
         "linkedin" => config
             .linkedin
-            .as_ref()
+            .first()
+            .and_then(|c| serde_json::to_value(c).ok()),
+        "wecom" => config
+            .wecom
+            .first()
             .and_then(|c| serde_json::to_value(c).ok()),
         _ => None,
     }
@@ -11916,7 +11920,7 @@ mod channel_config_tests {
     #[test]
     fn test_is_channel_configured_wecom_some() {
         let mut config = openfang_types::config::ChannelsConfig::default();
-        config.wecom = Some(openfang_types::config::WeComConfig {
+        config.wecom = vec![openfang_types::config::WeComConfig {
             corp_id: "test_corp".to_string(),
             agent_id: "test_agent".to_string(),
             secret_env: "WECOM_SECRET".to_string(),
@@ -11925,7 +11929,8 @@ mod channel_config_tests {
             encoding_aes_key: Some("aes_key".to_string()),
             default_agent: Some("assistant".to_string()),
             overrides: openfang_types::config::ChannelOverrides::default(),
-        });
+            ..Default::default()
+        }];
         assert!(is_channel_configured(&config, "wecom"));
     }
 

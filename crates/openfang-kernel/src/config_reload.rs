@@ -432,10 +432,10 @@ mod tests {
         let a = default_cfg();
         let mut b = default_cfg();
         // Change the channels config by adding a Telegram config
-        b.channels.telegram = Some(openfang_types::config::TelegramConfig {
+        b.channels.telegram = vec![openfang_types::config::TelegramConfig {
             bot_token_env: "TG_TOKEN".to_string(),
             ..Default::default()
-        });
+        }];
         let plan = build_reload_plan(&a, &b);
         assert!(!plan.restart_required);
         assert!(plan.hot_actions.contains(&HotAction::ReloadChannels));
