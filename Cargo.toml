@@ -162,7 +162,7 @@ lettre = { version = "0.11", default-features = false, features = [
     "tokio1-rustls-tls",
 ] }
 imap = "2"
-native-tls = "0.2"
+native-tls = { version = "0.2", features = ["vendored"] }
 mailparse = "0.16"
 
 # OpenSSL (vendored = statically compiled, no runtime libssl dependency on Linux)
