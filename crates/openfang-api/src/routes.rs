@@ -2839,7 +2839,7 @@ pub async fn list_channels(State(state): State<Arc<AppState>>) -> impl IntoRespo
                 channels.push(serde_json::json!({
                     "id": id,
                     "name": meta.name,
-                    "display_name": name_override.unwrap_or(&meta.display_name),
+                    "display_name": name_override.unwrap_or(meta.display_name),
                     "connected": connected,
                     "icon": meta.icon,
                     "description": meta.description,
@@ -2897,7 +2897,7 @@ pub async fn configure_channel(
     let robot_name = fields
         .get("name")
         .and_then(|v| v.as_str())
-        .unwrap_or(&meta.display_name)
+        .unwrap_or(meta.display_name)
         .to_string();
 
     let home = openfang_kernel::config::openfang_home();
@@ -3436,7 +3436,7 @@ pub async fn list_templates() -> impl IntoResponse {
                     let manifest_content = std::fs::read_to_string(&manifest_path).ok();
                     let description = manifest_content
                         .as_ref()
-                        .and_then(|content| toml::from_str::<AgentManifest>(&content).ok())
+                        .and_then(|content| toml::from_str::<AgentManifest>(content).ok())
                         .map(|m| m.description)
                         .unwrap_or_default();
 
@@ -8634,7 +8634,7 @@ fn upsert_channel_config(
             if let Some(item_table) = item.as_table() {
                 if item_table.get("id").and_then(|v| v.as_str()) == Some(id) {
                     // Found existing entry with same id, update it
-                    let new_table = convert_fields_to_toml_table(&fields);
+                    let new_table = convert_fields_to_toml_table(fields);
                     arr[idx] = toml::Value::Table(new_table);
                     found_and_updated = true;
                     break;
@@ -8644,13 +8644,13 @@ fn upsert_channel_config(
 
         if !found_and_updated {
             // id not found, append new entry
-            let ch_table = convert_fields_to_toml_table(&fields);
+            let ch_table = convert_fields_to_toml_table(fields);
             arr.push(toml::Value::Table(ch_table));
         }
         arr
     } else {
         // Channel doesn't exist, create new array with single entry
-        let ch_table = convert_fields_to_toml_table(&fields);
+        let ch_table = convert_fields_to_toml_table(fields);
         vec![toml::Value::Table(ch_table)]
     };
 

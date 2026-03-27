@@ -77,7 +77,7 @@ fn phantom_action_detected(text: &str) -> bool {
 const TOOL_ERROR_GUIDANCE: &str =
     "[System: One or more tool calls failed. Failed tools did not produce usable data. Do NOT invent missing results, cite nonexistent search results, or pretend failed tools succeeded. If your next steps depend on a failed tool, either retry with a materially different approach or explain the failure to the user and stop. Do not write files, store memory, or take downstream actions based on failed tool outputs.]";
 
-fn append_tool_error_guidance(tool_result_blocks: &mut Vec<ContentBlock>) {
+fn append_tool_error_guidance(tool_result_blocks: &mut [ContentBlock]) {
     let has_tool_error = tool_result_blocks
         .iter()
         .any(|block| matches!(block, ContentBlock::ToolResult { is_error: true, .. }));
@@ -389,7 +389,14 @@ pub async fn run_agent_loop(
 
         // Call LLM with retry, error classification, and circuit breaker
         let provider_name = manifest.model.provider.as_str();
-        let mut response = call_with_retry(&*driver, request, Some(provider_name), None, &manifest.fallback_models).await?;
+        let mut response = call_with_retry(
+            &*driver,
+            request,
+            Some(provider_name),
+            None,
+            &manifest.fallback_models,
+        )
+        .await?;
 
         total_usage.input_tokens += response.usage.input_tokens;
         total_usage.output_tokens += response.usage.output_tokens;
