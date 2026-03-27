@@ -11,7 +11,6 @@ pub mod fallback;
 pub mod gemini;
 pub mod openai;
 pub mod qwen_code;
-pub mod unigpt;
 
 use crate::llm_driver::{DriverConfig, LlmDriver, LlmError};
 use openfang_types::model_catalog::{
@@ -421,7 +420,7 @@ pub fn create_driver(config: &DriverConfig) -> Result<Arc<dyn LlmDriver>, LlmErr
             .base_url
             .clone()
             .unwrap_or_else(|| UNIGPT_BASE_URL.to_string());
-        return Ok(Arc::new(unigpt::UniGPTDriver::new(api_key, base_url)));
+        return Ok(Arc::new(openai::OpenAIDriver::new(api_key, base_url)));
     }
 
     // All other providers use OpenAI-compatible format

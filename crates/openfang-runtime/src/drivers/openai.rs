@@ -98,6 +98,8 @@ impl OpenAIDriver {
         }
         if self.azure_mode {
             builder = builder.header("api-key", self.api_key.as_str());
+        } else if self.base_url.contains("yunmaolink") || self.base_url.contains("unisound") {
+            builder = builder.header("DeskToken", self.api_key.as_str());
         } else {
             builder = builder.header("authorization", format!("Bearer {}", self.api_key.as_str()));
         }
@@ -486,6 +488,11 @@ impl LlmDriver for OpenAIDriver {
                 req_builder = req_builder.header(k, v);
             }
 
+            debug!(
+                "Request: {:?}",
+                serde_json::to_string(&oai_request).unwrap()
+            );
+
             let resp = req_builder
                 .send()
                 .await
@@ -602,8 +609,10 @@ impl LlmDriver for OpenAIDriver {
                 .text()
                 .await
                 .map_err(|e| LlmError::Http(e.to_string()))?;
-            let oai_response: OaiResponse =
-                serde_json::from_str(&body).map_err(|e| LlmError::Parse(e.to_string()))?;
+            let oai_response: OaiResponse = serde_json::from_str(&body).map_err(|e| {
+                warn!("Llm Parse Error: {e}-\nResponse: {body}");
+                LlmError::Parse(e.to_string())
+            })?;
 
             let choice = oai_response
                 .choices
