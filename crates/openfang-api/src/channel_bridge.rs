@@ -55,6 +55,7 @@ use openfang_channels::mumble::MumbleAdapter;
 use openfang_channels::ntfy::NtfyAdapter;
 use openfang_channels::webhook::WebhookAdapter;
 use openfang_channels::wecom::WeComAdapter;
+use openfang_channels::wecom_stream::WeComStreamAdapter;
 use openfang_kernel::OpenFangKernel;
 use openfang_types::agent::AgentId;
 use std::sync::Arc;
@@ -829,6 +830,7 @@ impl ChannelBridgeHandle for KernelBridgeAdapter {
             "webhook" => channels.webhook.first().map(|c| c.overrides.clone()),
             "linkedin" => channels.linkedin.first().map(|c| c.overrides.clone()),
             "wecom" => channels.wecom.first().map(|c| c.overrides.clone()),
+            "wecom_stream" => channels.wecom_stream.first().map(|c| c.overrides.clone()),
             _ => None,
         }
     }
@@ -1163,7 +1165,8 @@ pub async fn start_channel_bridge_with_config(
         || !config.gotify.is_empty()
         || !config.webhook.is_empty()
         || !config.linkedin.is_empty()
-        || !config.wecom.is_empty();
+        || !config.wecom.is_empty()
+        || !config.wecom_stream.is_empty();
     if !has_any {
         return (None, Vec::new());
     }
@@ -1567,6 +1570,31 @@ pub async fn start_channel_bridge_with_config(
                 wc_config.token.clone(),
             ));
             adapters.push((adapter, wc_config.default_agent.clone()));
+        }
+    }
+
+    // WeCom Stream mode (WebSocket)
+    // 过滤掉 bot_id 相同的配置，保留第一个出现的
+    let mut seen_bot_ids = std::collections::HashSet::new();
+    for ws_config in config
+        .wecom_stream
+        .iter()
+        .filter(|c| seen_bot_ids.insert(c.bot_id.clone()))
+    {
+        tracing::debug!(
+            "WeCom Stream config: {:?}, {:?}",
+            ws_config,
+            ws_config.secret_env
+        );
+        if !ws_config.bot_id.is_empty() {
+            if let Some(secret) = read_token(&ws_config.secret_env, "WeCom Stream (secret)") {
+                let adapter = Arc::new(WeComStreamAdapter::new(
+                    read_id(&ws_config.id),
+                    ws_config.bot_id.clone(),
+                    secret,
+                ));
+                adapters.push((adapter, ws_config.default_agent.clone()));
+            }
         }
     }
 
@@ -2041,6 +2069,7 @@ mod tests {
         assert!(config.channels.gotify.is_empty());
         assert!(config.channels.webhook.is_empty());
         assert!(config.channels.linkedin.is_empty());
+        assert!(config.channels.wecom_stream.is_empty());
     }
 
     #[test]

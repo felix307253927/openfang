@@ -2242,6 +2242,20 @@ const CHANNEL_REGISTRY: &[ChannelMeta] = &[
         setup_steps: &["Create a WeCom application at work.weixin.qq.com", "Get Corp ID, Agent ID, and Secret", "Configure callback URL to your webhook endpoint"],
         config_template: "[channels.wecom]\ncorp_id = \"\"\nagent_id = \"\"\nsecret_env = \"WECOM_SECRET\"",
     },
+    ChannelMeta {
+        name: "wecom_stream", display_name: "WeCom Stream", icon: "WS",
+        description: "WeCom Stream Mode (WebSocket long-connection)",
+        category: "enterprise", difficulty: "Easy", setup_time: "~5 min",
+        quick_setup: "Create an Enterprise Internal App with Stream Mode enabled",
+        setup_type: "form",
+        fields: &[
+            ChannelField { key: "bot_id", label: "Bot ID (Corp ID)", field_type: FieldType::Text, env_var: None, required: true, placeholder: "ww...", advanced: false },
+            ChannelField { key: "secret_env", label: "Secret", field_type: FieldType::Secret, env_var: Some("WECOM_WS_SECRET"), required: true, placeholder: "secret...", advanced: false },
+            ChannelField { key: "default_agent", label: "Default Agent", field_type: FieldType::Text, env_var: None, required: false, placeholder: "assistant", advanced: true },
+        ],
+        setup_steps: &["Create an Enterprise Internal App in WeCom Open Platform", "Enable Stream Mode in the app settings", "Copy Bot ID (Corp ID) and Secret below"],
+        config_template: "[channels.wecom_stream]\nbot_id = \"\"\nsecret_env = \"WECOM_WS_SECRET\"",
+    },
 ];
 
 #[allow(dead_code)]
@@ -2290,6 +2304,7 @@ fn is_channel_configured(config: &openfang_types::config::ChannelsConfig, name: 
         "webhook" => !config.webhook.is_empty(),
         "mumble" => !config.mumble.is_empty(),
         "wecom" => !config.wecom.is_empty(),
+        "wecom_stream" => !config.wecom_stream.is_empty(),
         _ => false,
     }
 }
@@ -2340,6 +2355,7 @@ fn get_channel_config_count(config: &openfang_types::config::ChannelsConfig, nam
         "webhook" => config.webhook.len() as u32,
         "mumble" => config.mumble.len() as u32,
         "wecom" => config.wecom.len() as u32,
+        "wecom_stream" => config.wecom_stream.len() as u32,
         _ => 0,
     }
 }
@@ -2591,6 +2607,10 @@ fn channel_config_values(
             .wecom
             .first()
             .and_then(|c| serde_json::to_value(c).ok()),
+        "wecom_stream" => config
+            .wecom_stream
+            .first()
+            .and_then(|c| serde_json::to_value(c).ok()),
         _ => None,
     }
 }
@@ -2711,11 +2731,6 @@ fn get_channel_configs(
             .iter()
             .filter_map(|c| serde_json::to_value(c).ok())
             .collect(),
-        "wecom" => config
-            .wecom
-            .iter()
-            .filter_map(|c| serde_json::to_value(c).ok())
-            .collect(),
         "revolt" => config
             .revolt
             .iter()
@@ -2808,6 +2823,16 @@ fn get_channel_configs(
             .collect(),
         "linkedin" => config
             .linkedin
+            .iter()
+            .filter_map(|c| serde_json::to_value(c).ok())
+            .collect(),
+        "wecom" => config
+            .wecom
+            .iter()
+            .filter_map(|c| serde_json::to_value(c).ok())
+            .collect(),
+        "wecom_stream" => config
+            .wecom_stream
             .iter()
             .filter_map(|c| serde_json::to_value(c).ok())
             .collect(),

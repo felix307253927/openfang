@@ -6314,14 +6314,21 @@ impl KernelHandle for OpenFangKernel {
             openfang_user: None,
         };
 
-        let formatted = if channel == "wecom" {
-            let output_format = self
-                .config
-                .channels
-                .wecom
-                .first()
-                .and_then(|c| c.overrides.output_format)
-                .unwrap_or(OutputFormat::PlainText);
+        let formatted = if channel == "wecom" || channel == "wecom_stream" {
+            let output_format = if channel == "wecom" {
+                self.config
+                    .channels
+                    .wecom
+                    .first()
+                    .and_then(|c| c.overrides.output_format)
+            } else {
+                self.config
+                    .channels
+                    .wecom_stream
+                    .first()
+                    .and_then(|c| c.overrides.output_format)
+            }
+            .unwrap_or(OutputFormat::PlainText);
             openfang_channels::formatter::format_for_wecom(message, output_format)
         } else {
             message.to_string()

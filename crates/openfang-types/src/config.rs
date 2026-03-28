@@ -1676,6 +1676,8 @@ pub struct ChannelsConfig {
     pub linkedin: Vec<LinkedInConfig>,
     /// WeCom/WeChat Work configurations (empty = disabled).
     pub wecom: Vec<WeComConfig>,
+    /// WeCom Stream mode configurations — long-lived WebSocket (empty = disabled).
+    pub wecom_stream: Vec<WeComStreamConfig>,
 }
 
 /// Telegram channel adapter configuration.
@@ -2683,6 +2685,40 @@ impl Default for WeComConfig {
             webhook_port: 8454,
             token: None,
             encoding_aes_key: None,
+            default_agent: None,
+            overrides: ChannelOverrides::default(),
+        }
+    }
+}
+
+/// WeCom Stream mode configurations — long-lived WebSocket (empty = disabled).
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(default)]
+pub struct WeComStreamConfig {
+    /// Display name for this channel configuration.
+    #[serde(default)]
+    pub name: Option<String>,
+    /// Icon (emoji or URL) for this channel configuration.
+    #[serde(default)]
+    pub id: String,
+    /// Bot ID (corpid).
+    pub bot_id: String,
+    /// Env var holding the Bot Secret (corpsecret).
+    pub secret_env: String,
+    /// Default agent name to route messages to.
+    pub default_agent: Option<String>,
+    /// Per-channel behavior overrides.
+    #[serde(default)]
+    pub overrides: ChannelOverrides,
+}
+
+impl Default for WeComStreamConfig {
+    fn default() -> Self {
+        Self {
+            name: None,
+            id: String::new(),
+            bot_id: String::new(),
+            secret_env: "WECOM_SECRET".to_string(),
             default_agent: None,
             overrides: ChannelOverrides::default(),
         }
@@ -3750,6 +3786,20 @@ impl KernelConfig {
                 warnings.push(format!(
                     "DingTalk Stream configured but {} is not set",
                     ds.app_secret_env
+                ));
+            }
+        }
+        for ws in &self.channels.wecom_stream {
+            if ws.bot_id.is_empty() {
+                warnings.push("WeCom Stream configured but bot_id is not set".to_string());
+            }
+            if std::env::var(&ws.secret_env)
+                .unwrap_or_default()
+                .is_empty()
+            {
+                warnings.push(format!(
+                    "WeCom Stream configured but {} is not set",
+                    ws.secret_env
                 ));
             }
         }
