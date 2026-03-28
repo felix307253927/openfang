@@ -213,12 +213,16 @@ pub struct FeishuAdapter {
     message_dedup: Arc<DedupCache>,
     /// Event deduplication cache.
     event_dedup: Arc<DedupCache>,
+    /// Connection status tracking: true = connected, false = connecting/disconnected/failed.
+    connected_tx: Arc<watch::Sender<bool>>,
+    connected_rx: watch::Receiver<bool>,
 }
 
 impl FeishuAdapter {
     /// Create a new Feishu adapter with minimal config.
     pub fn new(id: String, app_id: String, app_secret: String, webhook_port: u16) -> Self {
         let (shutdown_tx, shutdown_rx) = watch::channel(false);
+        let (connected_tx, connected_rx) = watch::channel(false);
         Self {
             id,
             app_id,
@@ -236,6 +240,8 @@ impl FeishuAdapter {
             cached_token: Arc::new(RwLock::new(None)),
             message_dedup: Arc::new(DedupCache::new(DEDUP_CACHE_SIZE)),
             event_dedup: Arc::new(DedupCache::new(DEDUP_CACHE_SIZE)),
+            connected_tx: Arc::new(connected_tx),
+            connected_rx,
         }
     }
 
@@ -268,6 +274,7 @@ impl FeishuAdapter {
     /// WebSocket mode does not require a public IP or webhook configuration.
     pub fn new_websocket(id: String, app_id: String, app_secret: String) -> Self {
         let (shutdown_tx, shutdown_rx) = watch::channel(false);
+        let (connected_tx, connected_rx) = watch::channel(false);
         Self {
             id,
             app_id,
@@ -285,6 +292,8 @@ impl FeishuAdapter {
             cached_token: Arc::new(RwLock::new(None)),
             message_dedup: Arc::new(DedupCache::new(DEDUP_CACHE_SIZE)),
             event_dedup: Arc::new(DedupCache::new(DEDUP_CACHE_SIZE)),
+            connected_tx: Arc::new(connected_tx),
+            connected_rx,
         }
     }
 
@@ -478,6 +487,7 @@ impl FeishuAdapter {
         let message_dedup = Arc::clone(&self.message_dedup);
         let event_dedup = Arc::clone(&self.event_dedup);
         let mut shutdown_rx = self.shutdown_rx.clone();
+        let connected_tx = Arc::clone(&self.connected_tx);
 
         tokio::spawn(async move {
             let verification_token = Arc::new(verification_token);
@@ -657,25 +667,30 @@ impl FeishuAdapter {
             );
 
             let addr = std::net::SocketAddr::from(([0, 0, 0, 0], port));
-            info!("{} webhook server listening on {addr}", *region_label);
 
             let listener = match tokio::net::TcpListener::bind(addr).await {
                 Ok(l) => l,
                 Err(e) => {
                     warn!("{} webhook bind failed: {e}", *region_label);
+                    let _ = connected_tx.send(false);
                     return;
                 }
             };
+
+            info!("{} webhook server listening on {addr}", *region_label);
+            let _ = connected_tx.send(true);
 
             let server = axum::serve(listener, app);
 
             tokio::select! {
                 result = server => {
+                    let _ = connected_tx.send(false);
                     if let Err(e) = result {
                         warn!("{} webhook server error: {e}", *region_label);
                     }
                 }
                 _ = shutdown_rx.changed() => {
+                    let _ = connected_tx.send(false);
                     info!("{} adapter shutting down", *region_label);
                 }
             }
@@ -741,6 +756,7 @@ impl FeishuAdapter {
             bot_names: self.bot_names.clone(),
             message_dedup: Arc::clone(&self.message_dedup),
             event_dedup: Arc::clone(&self.event_dedup),
+            connected_tx: Arc::clone(&self.connected_tx),
         }
     }
 
@@ -754,8 +770,10 @@ impl FeishuAdapter {
         let service_id = parse_service_id(&ws_url);
 
         info!("Connecting to {label} WebSocket endpoint: {ws_url}");
+        let _ = adapter.connected_tx.send(false);
         let (ws_stream, _) = connect_async(&ws_url).await?;
         info!("{label} WebSocket connected successfully");
+        let _ = adapter.connected_tx.send(true);
 
         let (mut write, mut read) = ws_stream.split();
         let mut shutdown_rx = adapter.shutdown_rx.clone();
@@ -766,7 +784,7 @@ impl FeishuAdapter {
         let channel_name = adapter.region.channel_name().to_string();
         let mut frame_parts: HashMap<String, Vec<Vec<u8>>> = HashMap::new();
 
-        loop {
+        let result = loop {
             tokio::select! {
                 msg = read.next() => {
                     match msg {
@@ -802,7 +820,7 @@ impl FeishuAdapter {
                         }
                         Some(Ok(Message::Close(frame))) => {
                             info!("{label} WebSocket closed by server: {frame:?}");
-                            break;
+                            break Ok(());
                         }
                         Some(Ok(Message::Ping(payload))) => {
                             let _ = write.send(Message::Pong(payload)).await;
@@ -811,25 +829,29 @@ impl FeishuAdapter {
                             debug!("{label} WebSocket pong");
                         }
                         Some(Ok(_)) => {}
-                        Some(Err(e)) => return Err(format!("{label} WebSocket stream error: {e}").into()),
-                        None => break,
+                        Some(Err(e)) => break Err(format!("{label} WebSocket stream error: {e}").into()),
+                        None => break Ok(()),
                     }
                 }
                 _ = ping_interval.tick() => {
                     let ping_frame = build_ping_frame(service_id);
-                    write.send(Message::Binary(ping_frame.encode_to_vec())).await?;
+                    if let Err(e) = write.send(Message::Binary(ping_frame.encode_to_vec())).await {
+                        warn!("{label} WS send ping failed: {e}");
+                        break Err(e.into());
+                    }
                 }
                 _ = shutdown_rx.changed() => {
                     if *shutdown_rx.borrow() {
                         info!("{label} WebSocket shutting down");
                         let _ = write.close().await;
-                        break;
+                        break Ok(());
                     }
                 }
             }
-        }
+        };
 
-        Ok(())
+        let _ = adapter.connected_tx.send(false);
+        result
     }
 
     #[allow(clippy::too_many_arguments)]
@@ -912,6 +934,7 @@ struct FeishuAdapterClone {
     bot_names: Vec<String>,
     message_dedup: Arc<DedupCache>,
     event_dedup: Arc<DedupCache>,
+    connected_tx: Arc<watch::Sender<bool>>,
 }
 
 impl FeishuAdapterClone {
@@ -1365,7 +1388,7 @@ impl ChannelAdapter for FeishuAdapter {
 
     fn status(&self) -> ChannelStatus {
         ChannelStatus {
-            connected: !self.shutdown_tx.is_closed(),
+            connected: *self.connected_rx.borrow(),
             ..Default::default()
         }
     }

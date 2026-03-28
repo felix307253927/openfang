@@ -40,11 +40,14 @@ pub struct DingTalkStreamAdapter {
     token_cache: Arc<Mutex<TokenCache>>,
     shutdown_tx: Arc<watch::Sender<bool>>,
     shutdown_rx: watch::Receiver<bool>,
+    connected_tx: Arc<watch::Sender<bool>>,
+    connected_rx: watch::Receiver<bool>,
 }
 
 impl DingTalkStreamAdapter {
     pub fn new(id: String, app_key: String, app_secret: String, robot_code: String) -> Self {
         let (shutdown_tx, shutdown_rx) = watch::channel(false);
+        let (connected_tx, connected_rx) = watch::channel(false);
         Self {
             id,
             app_key,
@@ -54,6 +57,8 @@ impl DingTalkStreamAdapter {
             token_cache: Arc::new(Mutex::new(TokenCache::default())),
             shutdown_tx: Arc::new(shutdown_tx),
             shutdown_rx,
+            connected_tx: Arc::new(connected_tx),
+            connected_rx,
         }
     }
 
@@ -177,6 +182,7 @@ impl ChannelAdapter for DingTalkStreamAdapter {
         let client = self.client.clone();
         let token_cache = Arc::clone(&self.token_cache);
         let mut shutdown_rx = self.shutdown_rx.clone();
+        let connected_tx = Arc::clone(&self.connected_tx);
 
         info!("DingTalk Stream adapter starting WebSocket connection");
 
@@ -186,8 +192,11 @@ impl ChannelAdapter for DingTalkStreamAdapter {
             loop {
                 if *shutdown_rx.borrow() {
                     info!("DingTalk Stream: shutdown requested");
+                    let _ = connected_tx.send(false);
                     break;
                 }
+
+                let _ = connected_tx.send(false);
 
                 // 1. Get access token
                 let token =
@@ -229,6 +238,7 @@ impl ChannelAdapter for DingTalkStreamAdapter {
                 };
 
                 info!("DingTalk Stream: connected");
+                let _ = connected_tx.send(true);
                 attempt = 0;
                 let (mut sink, mut source) = ws_stream.split();
 
@@ -238,6 +248,7 @@ impl ChannelAdapter for DingTalkStreamAdapter {
                         _ = shutdown_rx.changed() => {
                             if *shutdown_rx.borrow() {
                                 info!("DingTalk Stream: graceful shutdown");
+                                let _ = connected_tx.send(false);
                                 return;
                             }
                         }
@@ -255,6 +266,9 @@ impl ChannelAdapter for DingTalkStreamAdapter {
                         }
                     }
                 }
+
+                // Connection closed, update status
+                let _ = connected_tx.send(false);
 
                 // Reconnect
                 attempt += 1;
@@ -290,7 +304,7 @@ impl ChannelAdapter for DingTalkStreamAdapter {
 
     fn status(&self) -> ChannelStatus {
         ChannelStatus {
-            connected: !self.shutdown_tx.is_closed(),
+            connected: *self.connected_rx.borrow(),
             ..Default::default()
         }
     }
