@@ -488,7 +488,7 @@ impl LlmDriver for OpenAIDriver {
                 req_builder = req_builder.header(k, v);
             }
 
-            debug!(
+            tracing::trace!(
                 "Request: {:?}",
                 serde_json::to_string(&oai_request).unwrap()
             );
